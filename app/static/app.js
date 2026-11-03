@@ -1,7 +1,10 @@
-/* Fieldlist's own same-origin endpoints only. No third-party data API or client key. */
+/* Fieldlist Prospecting OS — Powered by Aceternity UI & 21st.dev Component Architecture */
 'use strict';
+
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 const state = {
   result: null,
   jobId: null,
@@ -12,15 +15,19 @@ const state = {
   pollErrors: 0,
   status: null,
   searchQuery: '',
-  selectedIds: new Set()
+  selectedIds: new Set(),
+  theme: localStorage.getItem('fieldlist_theme') || 'midnight'
 };
-const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/* ==========================================================================
+   DOM & Utility Helpers
+   ========================================================================== */
 
 function node(tag, className = '', text = '') {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  if (text !== '') element.textContent = text;
-  return element;
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (text !== '') el.textContent = text;
+  return el;
 }
 
 function icon(name, className = '') {
@@ -61,7 +68,7 @@ async function api(path, options = {}) {
   try {
     data = await response.json();
   } catch {
-    throw new Error('The local server returned an unreadable response. Please try again.');
+    throw new Error('Local server returned an unreadable response.');
   }
   if (!response.ok) {
     const message = typeof data.detail === 'string'
@@ -81,7 +88,7 @@ function toast(message) {
   clearTimeout(toastTimer);
   $('#toast span').textContent = message;
   $('#toast').hidden = false;
-  toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 3800);
+  toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 3600);
 }
 
 function notice(message, type = 'info') {
@@ -95,18 +102,183 @@ function clearNotice() {
   $('#notice').hidden = true;
 }
 
+/* ==========================================================================
+   Aceternity UI: Interactive 3D Cubes Grid Background
+   ========================================================================== */
+
+function initAceternityCubesGrid() {
+  const canvas = document.getElementById('bg-cubes-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let width = (canvas.width = window.innerWidth);
+  let height = (canvas.height = window.innerHeight);
+
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  });
+
+  const mouse = { x: width / 2, y: height / 2, targetX: width / 2, targetY: height / 2 };
+
+  window.addEventListener('mousemove', e => {
+    mouse.targetX = e.clientX;
+    mouse.targetY = e.clientY;
+    document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+    document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+  });
+
+  const cubeSize = 44;
+  let time = 0;
+
+  function draw() {
+    time += 0.015;
+    mouse.x += (mouse.targetX - mouse.x) * 0.08;
+    mouse.y += (mouse.targetY - mouse.y) * 0.08;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const isMidnight = document.documentElement.getAttribute('data-theme') === 'midnight';
+
+    const cols = Math.ceil(width / cubeSize) + 4;
+    const rows = Math.ceil(height / (cubeSize * 0.6)) + 4;
+
+    for (let r = -2; r < rows; r++) {
+      for (let c = -2; c < cols; c++) {
+        const x = c * cubeSize + (r % 2 === 0 ? 0 : cubeSize / 2);
+        const y = r * (cubeSize * 0.6);
+
+        const dx = x - mouse.x;
+        const dy = y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        const maxDist = 320;
+        let intensity = 0;
+        if (dist < maxDist) {
+          intensity = Math.pow(1 - dist / maxDist, 1.8);
+        }
+
+        const wave = Math.sin(time + (x + y) * 0.006) * 0.5 + 0.5;
+
+        // Cube top face
+        ctx.beginPath();
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x + 18, y);
+        ctx.lineTo(x, y + 8);
+        ctx.lineTo(x - 18, y);
+        ctx.closePath();
+
+        if (intensity > 0.02) {
+          if (isMidnight) {
+            ctx.fillStyle = `rgba(59, 130, 246, ${intensity * 0.35})`;
+            ctx.strokeStyle = `rgba(6, 182, 212, ${0.1 + intensity * 0.7})`;
+          } else if (isLight) {
+            ctx.fillStyle = `rgba(37, 99, 235, ${intensity * 0.15})`;
+            ctx.strokeStyle = `rgba(37, 99, 235, ${0.1 + intensity * 0.4})`;
+          } else {
+            ctx.fillStyle = `rgba(59, 130, 246, ${intensity * 0.25})`;
+            ctx.strokeStyle = `rgba(96, 165, 250, ${0.08 + intensity * 0.6})`;
+          }
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = isLight
+            ? `rgba(0, 0, 0, ${0.025 + wave * 0.02})`
+            : `rgba(255, 255, 255, ${0.02 + wave * 0.02})`;
+        }
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+/* ==========================================================================
+   Aceternity Spotlight Mouse-Tracking for Cards
+   ========================================================================== */
+
+function initSpotlightCards() {
+  document.addEventListener('mousemove', e => {
+    $$('.spotlight-card').forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--card-mouse-x', `${x}px`);
+      card.style.setProperty('--card-mouse-y', `${y}px`);
+    });
+  });
+}
+
+/* ==========================================================================
+   Theme Switcher (Midnight / Dark / Light)
+   ========================================================================== */
+
+function applyTheme(themeName) {
+  state.theme = themeName;
+  document.documentElement.setAttribute('data-theme', themeName);
+  localStorage.setItem('fieldlist_theme', themeName);
+
+  const iconUse = $('#theme-icon use');
+  if (iconUse) {
+    if (themeName === 'light') iconUse.setAttribute('href', '#i-sun');
+    else if (themeName === 'midnight') iconUse.setAttribute('href', '#i-spark');
+    else iconUse.setAttribute('href', '#i-moon');
+  }
+}
+
+function cycleTheme() {
+  const nextTheme = state.theme === 'midnight' ? 'dark' : state.theme === 'dark' ? 'light' : 'midnight';
+  applyTheme(nextTheme);
+  const prettyName = nextTheme === 'midnight' ? 'Midnight Cyber' : nextTheme === 'dark' ? 'Deep Charcoal' : 'Clean Light';
+  toast(`Theme switched to ${prettyName}`);
+}
+
+/* ==========================================================================
+   21st.dev Style Command Palette (Ctrl+K)
+   ========================================================================== */
+
+function openCommandPalette() {
+  const dialog = $('#cmd-palette-dialog');
+  if (!dialog) return;
+  dialog.showModal();
+  const input = $('#cmd-search-input');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  filterCommandList('');
+}
+
+function closeCommandPalette() {
+  const dialog = $('#cmd-palette-dialog');
+  if (dialog && dialog.open) dialog.close();
+}
+
+function filterCommandList(query) {
+  const q = query.toLowerCase().trim();
+  $$('#cmd-list .cmd-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.hidden = q !== '' && !text.includes(q);
+  });
+}
+
+/* ==========================================================================
+   Status & Allowance
+   ========================================================================== */
+
 async function refreshStatus() {
   try {
     const status = await api('/api/status');
     state.status = status;
     $('#allowance-text').textContent = 'Unlimited searches';
     $('#allowance-fill').style.width = '100%';
-    $('.allowance-meta span:last-child').textContent = '';
+    $('.allowance-meta span:last-child').textContent = 'Engine Live';
     $('#quota-note').textContent = 'Unlimited searches enabled';
     if ($('#kpi-allowance')) $('#kpi-allowance').textContent = 'Unlimited';
     $('#cache-days-note').textContent = status.cache_days;
-    $$('.cache-days-copy').forEach(element => { element.textContent = status.cache_days; });
-  } catch { /* History/status is non-blocking. */ }
+    $$('.cache-days-copy').forEach(el => { el.textContent = status.cache_days; });
+  } catch { /* Non-blocking */ }
 }
 
 async function refreshHistory() {
@@ -138,10 +310,14 @@ async function refreshHistory() {
   } catch { /* Non-blocking */ }
 }
 
+/* ==========================================================================
+   Search & Job Progress
+   ========================================================================== */
+
 function setBusy(busy) {
   state.busy = busy;
-  $$('#search-form input, #search-form select, #search-button, [data-niche], .recent-item').forEach(element => {
-    element.disabled = busy;
+  $$('#search-form input, #search-form select, #search-button, [data-niche], .recent-item, .tag-pill').forEach(el => {
+    el.disabled = busy;
   });
   const button = $('#search-button');
   button.replaceChildren(
@@ -203,7 +379,7 @@ async function pollJob() {
       setBusy(false);
       state.jobId = null;
       $('#empty-state').hidden = false;
-      notice(job.error?.message || 'The search could not finish. Please try again later.', 'error');
+      notice(job.error?.message || 'Search could not finish. Please try again.', 'error');
       await refreshStatus();
       return;
     }
@@ -219,7 +395,7 @@ async function pollJob() {
     if (error.status === 404 || state.pollErrors >= 4) {
       setBusy(false);
       state.jobId = null;
-      notice(error.message || 'The connection to the search was lost. A completed search may still be available in recent searches.', 'error');
+      notice(error.message || 'Connection lost. Check recent searches.', 'error');
       await refreshStatus();
       return;
     }
@@ -267,10 +443,14 @@ async function startSearch(event) {
   } catch (error) {
     setBusy(false);
     state.jobId = null;
-    notice(error.name === 'TimeoutError' ? 'The server took too long to respond. Please try again.' : error.message || 'Could not connect to the server.', 'error');
+    notice(error.name === 'TimeoutError' ? 'Server took too long to respond. Try again.' : error.message || 'Could not connect to server.', 'error');
     await refreshStatus();
   }
 }
+
+/* ==========================================================================
+   Table Rendering & Multi-Actions
+   ========================================================================== */
 
 function visibleRows() {
   if (!state.result) return [];
@@ -314,8 +494,7 @@ function websiteBadge(item) {
 
 function updateExportButtonLabel() {
   const count = state.selectedIds.size;
-  const exportBtn = $('#export-csv');
-  const label = $('#export-csv-text') || exportBtn;
+  const label = $('#export-csv-text') || $('#export-csv');
   if (count > 0) {
     label.textContent = `Export Selected (${count})`;
   } else {
@@ -339,7 +518,6 @@ function renderTable() {
   $('#filter-control select').value = state.filter;
 
   $('#sort-rating').closest('th').setAttribute('aria-sort', state.sort === 'desc' ? 'descending' : state.sort === 'asc' ? 'ascending' : 'none');
-  $('#sort-rating').title = state.sort === 'desc' ? 'Sort rating lowest first' : state.sort === 'asc' ? 'Restore default order' : 'Sort rating highest first';
 
   updateExportButtonLabel();
 
@@ -353,9 +531,8 @@ function renderTable() {
     const tr = node('tr');
     const td = node('td', 'no-matches');
     td.colSpan = 8;
-    const hasProfiles = state.result.inspected > 0;
-    td.append(node('strong', '', hasProfiles ? 'No listings match this filter.' : 'No listings found.'));
-    td.append(document.createTextNode(hasProfiles ? 'Try clearing the search filter or switch to "All checked businesses".' : 'Try a broader niche or include a state/region.'));
+    td.append(node('strong', '', 'No listings match this filter.'));
+    td.append(document.createTextNode('Try searching another niche or switch to "All checked businesses".'));
     tr.append(td);
     body.append(tr);
     return;
@@ -371,7 +548,7 @@ function renderTable() {
     checkbox.type = 'checkbox';
     checkbox.checked = state.selectedIds.has(itemId);
     checkbox.setAttribute('aria-label', `Select ${item.name}`);
-    checkbox.addEventListener('change', (e) => {
+    checkbox.addEventListener('change', e => {
       e.stopPropagation();
       if (checkbox.checked) state.selectedIds.add(itemId);
       else state.selectedIds.delete(itemId);
@@ -393,7 +570,7 @@ function renderTable() {
     button.addEventListener('click', () => openDetail(item));
     business.append(button);
 
-    // 3. Phone with WhatsApp & Copy action buttons
+    // 3. Phone with WhatsApp & Copy Micro-Actions
     const phoneCell = node('td', 'phone-cell');
     phoneCell.dataset.label = 'Phone';
     if (item.phone) {
@@ -418,7 +595,7 @@ function renderTable() {
       copyBtn.type = 'button';
       copyBtn.title = 'Copy phone number';
       copyBtn.append(icon('copy'));
-      copyBtn.addEventListener('click', (e) => { e.stopPropagation(); copyText(item.phone); });
+      copyBtn.addEventListener('click', e => { e.stopPropagation(); copyText(item.phone); });
       actions.append(copyBtn);
 
       phoneBox.append(actions);
@@ -446,9 +623,7 @@ function renderTable() {
     const address = node('td', 'address-cell');
     address.dataset.label = 'Address';
     address.append(node('div', 'address-text', item.address || 'Not listed'));
-    if (item.plus_code) {
-      address.append(node('div', 'plus-code-chip', item.plus_code));
-    }
+    if (item.plus_code) address.append(node('div', 'plus-code-chip', item.plus_code));
     if (item.hours) {
       const shortHours = item.hours.split(';')[0].replace(/Hours:\s*/i, '').trim();
       address.append(node('div', 'hours-chip', shortHours));
@@ -503,7 +678,6 @@ function exportCsv() {
   let rows = visibleRows();
   if (!rows.length || !state.result) return;
 
-  // If items are specifically selected, export only selected
   if (state.selectedIds.size > 0) {
     rows = rows.filter(item => state.selectedIds.has(item.id || item.name));
   }
@@ -619,10 +793,6 @@ function openDetail(item) {
     add('Website', 'No website link on this Maps profile (Opportunity)');
   }
 
-  if (item.appointment_url) {
-    add('Appointments', externalLink(item.appointment_url, '', 'Booking / Reserve Link'));
-  }
-
   $('#detail-observed').textContent = `Read from Google Maps · ${dateLabel(item.observed_at)}. Verify details before outreach.`;
   $('#detail-map').href = safeLink(item.maps_url);
 
@@ -641,7 +811,11 @@ function openDetail(item) {
   $('#detail-dialog').showModal();
 }
 
-// Event Listeners
+/* ==========================================================================
+   Event Listeners & Initialization
+   ========================================================================== */
+
+// Search form
 $('#search-form').addEventListener('submit', startSearch);
 $('#dismiss-notice').addEventListener('click', clearNotice);
 $('#export-csv').addEventListener('click', exportCsv);
@@ -665,7 +839,7 @@ $('#copy-all-phones').addEventListener('click', () => {
 });
 
 // Select all checkbox
-$('#select-all')?.addEventListener('change', (e) => {
+$('#select-all')?.addEventListener('change', e => {
   const rows = visibleRows();
   if (e.target.checked) {
     rows.forEach(r => state.selectedIds.add(r.id || r.name));
@@ -676,11 +850,12 @@ $('#select-all')?.addEventListener('change', (e) => {
 });
 
 // Instant live search filter
-$('#table-search')?.addEventListener('input', (e) => {
+$('#table-search')?.addEventListener('input', e => {
   state.searchQuery = e.target.value;
   renderTable();
 });
 
+// Cancel search
 $('#cancel-search').addEventListener('click', async () => {
   if (!state.jobId) return;
   $('#cancel-search').disabled = true;
@@ -693,14 +868,70 @@ $('#cancel-search').addEventListener('click', async () => {
   }
 });
 
+// Quick suggestion buttons (trades)
 $$('[data-niche]').forEach(button => button.addEventListener('click', () => {
   if (state.busy) return;
   $('#niche').value = button.dataset.niche;
   $('#city').value = button.dataset.city;
   $('#niche').focus();
-  toast('Filled in. Hit "Find businesses" to start.');
+  toast('Trade set. Hit "Find businesses" to start.');
 }));
 
+// Theme toggle
+$('#theme-toggle-btn')?.addEventListener('click', cycleTheme);
+$('#cmd-action-toggle-theme')?.addEventListener('click', () => {
+  cycleTheme();
+  closeCommandPalette();
+});
+
+// Command palette triggers
+$('#cmd-palette-btn')?.addEventListener('click', openCommandPalette);
+$('#sidebar-cmd-btn')?.addEventListener('click', openCommandPalette);
+$('#nav-cmd-trigger')?.addEventListener('click', openCommandPalette);
+$('[data-close-cmd]')?.addEventListener('click', closeCommandPalette);
+
+$('#cmd-search-input')?.addEventListener('input', e => {
+  filterCommandList(e.target.value);
+});
+
+$$('[data-cmd-niche]').forEach(item => {
+  item.addEventListener('click', () => {
+    closeCommandPalette();
+    $('#niche').value = item.dataset.cmdNiche;
+    $('#city').value = item.dataset.cmdCity;
+    $('#search-form').requestSubmit();
+  });
+});
+
+$('#cmd-action-export')?.addEventListener('click', () => {
+  closeCommandPalette();
+  exportCsv();
+});
+
+$('#cmd-action-copy-phones')?.addEventListener('click', () => {
+  closeCommandPalette();
+  $('#copy-all-phones')?.click();
+});
+
+// Keyboard shortcuts (Cmd+K / Ctrl+K and /)
+window.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    const dialog = $('#cmd-palette-dialog');
+    if (dialog && dialog.open) closeCommandPalette();
+    else openCommandPalette();
+    return;
+  }
+  if (e.key === 'Escape') {
+    closeCommandPalette();
+  }
+  if (e.key === '/' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    e.preventDefault();
+    $('#niche')?.focus();
+  }
+});
+
+// Modal dialog closers
 $$('[data-open-help]').forEach(button => button.addEventListener('click', () => $('#help-dialog').showModal()));
 $$('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
 $$('dialog').forEach(dialog => dialog.addEventListener('click', event => {
@@ -711,16 +942,18 @@ $$('dialog').forEach(dialog => dialog.addEventListener('click', event => {
   }
 }));
 
-// Quick keyboard shortcut "/" to focus niche search input
-window.addEventListener('keydown', (e) => {
-  if (e.key === '/' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-    e.preventDefault();
-    $('#niche')?.focus();
-  }
-});
+/* ==========================================================================
+   Boot Application
+   ========================================================================== */
 
 async function initApp() {
+  applyTheme(state.theme);
+  initAceternityCubesGrid();
+  initSpotlightCards();
+
   await Promise.all([refreshStatus(), refreshHistory()]);
+
+  // Auto-load most recent search so dashboard is active immediately
   if (!state.result && !state.busy) {
     try {
       const { searches } = await api('/api/history');
@@ -737,7 +970,7 @@ async function initApp() {
           renderResult(res.result);
         }
       }
-    } catch { /* Fallback */ }
+    } catch { /* Non-blocking */ }
   }
 }
 
