@@ -41,6 +41,9 @@ DETAIL_JS = r"""
   const website = q('a[data-item-id="authority"]') || q('a[aria-label^="Website:"]');
   const addressNode = q('button[data-item-id="address"]');
   const phoneNode = q('button[data-item-id^="phone:tel:"]');
+  const plusCodeNode = q('button[data-item-id="oloc"]') || q('button[aria-label^="Plus code:"]');
+  const hoursNode = q('button[data-item-id*="oh"]') || q('[aria-label*="Open"], [aria-label*="Closed"]') || q('.OqCzi');
+  const appointmentNode = q('a[data-item-id="action:3"], a[aria-label*="Appointment"], a[aria-label*="Reserve"]');
   const share = q('button[data-value="Share"]') || q('button[aria-label^="Share"]') || q('[data-item-id="share"]');
   const ratingLabels = Array.from(q('.F7nice')?.querySelectorAll('[aria-label]') || []).map(el => el.getAttribute('aria-label'));
   const reviewLabel = ratingLabels.find(value => /\breviews?\b/i.test(value)) || label('button[jsaction*="review"]')
@@ -51,6 +54,9 @@ DETAIL_JS = r"""
     website: website?.href || '',
     address: addressNode?.getAttribute('aria-label') || addressNode?.textContent || '',
     phone: phoneNode?.getAttribute('aria-label') || phoneNode?.textContent || '',
+    plus_code: plusCodeNode?.getAttribute('aria-label') || plusCodeNode?.textContent || '',
+    hours: hoursNode?.getAttribute('aria-label') || hoursNode?.textContent || '',
+    appointment_url: appointmentNode?.href || '',
     category: text('button[jsaction*="category"]'),
     rating_text: ratingNode?.textContent || '',
     reviews_text: reviewLabel,
@@ -132,6 +138,9 @@ def extract_business(listing: dict[str, str], detail: dict[str, Any], source_url
         "category": (detail.get("category") or "").strip(),
         "phone": clean_label(detail.get("phone", ""), "Phone"),
         "address": clean_label(detail.get("address", ""), "Address"),
+        "plus_code": clean_label(detail.get("plus_code", ""), "Plus code"),
+        "hours": clean_label(detail.get("hours", ""), "Hours"),
+        "appointment_url": public_http_url(detail.get("appointment_url", "")),
         "rating": parse_rating(detail.get("rating_text", "")),
         "reviews": parse_reviews(detail.get("reviews_text", "")),
         "website": website,

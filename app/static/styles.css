@@ -1259,6 +1259,180 @@ main {
   font-size: 11.5px;
   color: var(--text-secondary);
   background: #111215;
+  flex-wrap: wrap;
+}
+
+.table-filter-bar {
+  flex: 1;
+  min-width: 260px;
+  max-width: 440px;
+}
+
+.table-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.table-search-wrap > .icon {
+  position: absolute;
+  left: 10px;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+#table-search {
+  width: 100%;
+  height: 32px;
+  background: #18191e;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0 12px 0 32px;
+  font-size: 12px;
+  color: var(--text-primary);
+  transition: all 0.15s ease;
+}
+
+#table-search:focus {
+  border-color: var(--border-focus);
+  background: #1e2027;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+#table-search::placeholder {
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
+
+.table-meta-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Checkbox styling */
+.th-checkbox, .td-checkbox {
+  width: 38px;
+  padding-left: 16px !important;
+  padding-right: 4px !important;
+  text-align: center;
+}
+
+.th-checkbox input, .td-checkbox input {
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent-blue);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+/* Phone cell with WhatsApp & Copy micro-actions */
+.phone-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.phone-number {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.cell-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #1c1d24;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.action-chip .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.action-chip:hover {
+  transform: translateY(-1px);
+}
+
+.wa-chip:hover {
+  background: rgba(37, 211, 102, 0.15);
+  border-color: rgba(37, 211, 102, 0.4);
+  color: #25d366;
+}
+
+.copy-chip:hover {
+  background: var(--accent-blue-soft);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: var(--accent-blue);
+}
+
+/* Plus Code & Hours badges */
+.plus-code-chip {
+  display: inline-block;
+  font-size: 9.5px;
+  font-family: monospace;
+  color: var(--text-faint);
+  background: #111216;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-top: 3px;
+  margin-right: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hours-chip {
+  display: inline-block;
+  font-size: 9.5px;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* WhatsApp button in modal */
+.whatsapp-button {
+  background: #075e54;
+  border-color: #128c7e;
+  color: #ffffff;
+}
+
+.whatsapp-button:hover:not(:disabled) {
+  background: #128c7e;
+  color: #ffffff;
+  border-color: #25d366;
+}
+
+.whatsapp-button .icon {
+  width: 14px;
+  height: 14px;
+  color: #25d366;
 }
 
 .cache-label {
