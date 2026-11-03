@@ -480,11 +480,10 @@ function setBusy(busy) {
     $('#copy-sheets').disabled = true;
     $('#save-selected-leads').disabled = true;
     $('#table-container').hidden = true;
-    $('#empty-state').hidden = false;
-    $('#empty-state').classList.add('searching');
+    $('#table-container').style.display = 'none';
+    $('#empty-state').hidden = true;
+    $('#empty-state').style.display = 'none';
     $('#result-count').hidden = true;
-  } else {
-    $('#empty-state').classList.remove('searching');
   }
 }
 
@@ -547,7 +546,10 @@ async function pollJob() {
     if (job.status === 'failed') {
       setBusy(false);
       state.jobId = null;
-      $('#empty-state').hidden = false;
+      if (!state.result) {
+        $('#empty-state').hidden = false;
+        $('#empty-state').style.display = 'flex';
+      }
       notice(job.error?.message || 'Search could not finish. Please try again.', 'error');
       await refreshStatus();
       return;
@@ -889,7 +891,9 @@ function renderResult(result) {
   if ($('#table-search')) $('#table-search').value = '';
 
   $('#empty-state').hidden = true;
+  $('#empty-state').style.display = 'none';
   $('#table-container').hidden = false;
+  $('#table-container').style.display = 'block';
   $('#results-subtitle').textContent = `${result.niche} in ${result.city} · Extracted from Google Maps`;
 
   $('#stat-inspected').textContent = result.inspected;
