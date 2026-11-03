@@ -3,13 +3,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
+import time
 import uuid
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException, Request
+import httpx
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
@@ -204,3 +208,220 @@ async def cancel_job(job_id: str):
         cancel_events[job_id].set()
         job.update(status="cancelling", message="Stopping after the current page…")
     return public_job(job)
+
+
+# ==========================================================================
+# SparkXFlow Pro Extensions: Metrics, Lead Management, Lists, Website Audit
+# ==========================================================================
+
+class SaveLeadInput(BaseModel):
+    id: str | None = None
+    name: str = Field(min_length=1)
+    category: str = ""
+    phone: str = ""
+    address: str = ""
+    website: str = ""
+    website_status: str = "unknown"
+    rating: float | None = None
+    reviews: int | None = None
+    maps_url: str = ""
+    plus_code: str = ""
+    hours: str = ""
+    is_claimed: bool = True
+    status: str = "New"
+    list_name: str = "General"
+    notes: str = ""
+    tags: list[str] = []
+
+
+class UpdateLeadInput(BaseModel):
+    status: str | None = None
+    list_name: str | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
+    phone: str | None = None
+    website: str | None = None
+    address: str | None = None
+
+
+class CreateListInput(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    description: str = ""
+
+
+class AuditInput(BaseModel):
+    url: str = Field(min_length=3, max_length=500)
+
+
+@app.get("/api/metrics")
+async def get_metrics():
+    return storage.get_platform_metrics()
+
+
+@app.get("/api/leads")
+async def get_leads(
+    status: str | None = Query(None),
+    list_name: str | None = Query(None),
+    search: str | None = Query(None),
+):
+    leads = storage.get_saved_leads(status=status, list_name=list_name, search=search)
+    return {"leads": leads, "total": len(leads)}
+
+
+@app.post("/api/leads")
+async def save_lead(body: SaveLeadInput):
+    data = body.model_dump()
+    saved = storage.save_lead(data)
+    return {"ok": True, "lead": saved}
+
+
+@app.patch("/api/leads/{lead_id}")
+async def update_lead(lead_id: str, body: UpdateLeadInput):
+    updates = body.model_dump(exclude_unset=True)
+    updated = storage.update_saved_lead(lead_id, updates)
+    if not updated:
+        raise HTTPException(404, "Lead not found.")
+    return {"ok": True, "lead": updated}
+
+
+@app.delete("/api/leads/{lead_id}")
+async def delete_lead(lead_id: str):
+    success = storage.delete_saved_lead(lead_id)
+    if not success:
+        raise HTTPException(404, "Lead not found.")
+    return {"ok": True}
+
+
+@app.get("/api/lists")
+async def get_lists():
+    return {"lists": storage.get_lead_lists()}
+
+
+@app.post("/api/lists")
+async def create_list(body: CreateListInput):
+    created = storage.create_lead_list(body.name, body.description)
+    return {"ok": True, "list": created}
+
+
+@app.delete("/api/lists/{name}")
+async def delete_list(name: str):
+    if name == "General":
+        raise HTTPException(400, "Cannot delete default General list.")
+    deleted = storage.delete_lead_list(name)
+    if not deleted:
+        raise HTTPException(404, "List not found.")
+    return {"ok": True}
+
+
+@app.post("/api/audit")
+async def run_audit(body: AuditInput):
+    url = body.url.strip()
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    parsed = urlparse(url)
+    if not parsed.netloc:
+        raise HTTPException(400, "Please provide a valid website address.")
+
+    audit_id = uuid.uuid4().hex
+    created_at = datetime.now(timezone.utc).isoformat()
+    t0 = time.monotonic()
+
+    status_code = 0
+    resp_time_ms = 0
+    is_https = parsed.scheme == "https"
+    title = ""
+    meta_desc = ""
+    has_viewport = False
+    has_h1 = False
+    findings = []
+    recommendations = []
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 SparkXFlow/2.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True, verify=False) as client:
+            resp = await client.get(url, headers=headers)
+            resp_time_ms = round((time.monotonic() - t0) * 1000)
+            status_code = resp.status_code
+            is_https = str(resp.url).startswith("https://")
+            html = resp.text[:150000]
+
+            title_m = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
+            title = " ".join(title_m.group(1).split()) if title_m else ""
+
+            desc_m = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\'](.*?)["\']', html, re.I | re.S)
+            if not desc_m:
+                desc_m = re.search(r'<meta[^>]*content=["\'](.*?)["\'][^>]*name=["\']description["\']', html, re.I | re.S)
+            meta_desc = " ".join(desc_m.group(1).split()) if desc_m else ""
+
+            has_viewport = bool(re.search(r'<meta[^>]*name=["\']viewport["\']', html, re.I))
+            has_h1 = bool(re.search(r'<h1[^>]*>.*?</h1>', html, re.I | re.S))
+
+            if status_code >= 400:
+                findings.append(f"HTTP error status code {status_code} returned by web server.")
+                recommendations.append("Fix server errors or broken redirects immediately to restore customer access.")
+            else:
+                findings.append(f"Server is responding with HTTP {status_code} OK ({resp_time_ms}ms).")
+
+            if resp_time_ms > 1400:
+                findings.append(f"High server latency detected ({resp_time_ms}ms).")
+                recommendations.append("Upgrade hosting or implement CDN caching; slow load times drive away mobile leads.")
+            else:
+                findings.append(f"Fast initial server response ({resp_time_ms}ms).")
+
+            if is_https:
+                findings.append("SSL encryption active (HTTPS).")
+            else:
+                findings.append("Insecure connection (HTTP only).")
+                recommendations.append("Install an SSL certificate to eliminate browser 'Not Secure' warnings.")
+
+            if has_viewport:
+                findings.append("Mobile viewport meta tag configured.")
+            else:
+                findings.append("Missing mobile viewport configuration.")
+                recommendations.append("Site may render poorly on smartphones; pitch responsive mobile redesign.")
+
+            if meta_desc:
+                findings.append("Search engine meta description tag present.")
+            else:
+                findings.append("Missing search engine meta description.")
+                recommendations.append("Add a compelling meta description to improve Google Search click-through rates.")
+
+            if not has_h1:
+                findings.append("No primary H1 heading detected in initial HTML.")
+                recommendations.append("Structure page with clear H1 headings matching local search terms.")
+
+    except httpx.ConnectTimeout:
+        resp_time_ms = round((time.monotonic() - t0) * 1000)
+        findings.append("Connection timed out after 10 seconds.")
+        recommendations.append("Website server is unresponsive; pitch reliable modern web hosting.")
+    except Exception as exc:
+        err_msg = str(exc).splitlines()[0] if str(exc) else "Server unreachable"
+        findings.append(f"Connection diagnostic note: {err_msg}")
+        recommendations.append("Domain may be parked or misconfigured. Excellent prospect for a fresh web build.")
+
+    audit_record = {
+        "id": audit_id,
+        "url": url,
+        "status_code": status_code,
+        "response_time_ms": resp_time_ms,
+        "is_https": is_https,
+        "title": title,
+        "meta_description": meta_desc,
+        "has_viewport": has_viewport,
+        "has_h1": has_h1,
+        "findings": findings,
+        "recommendations": recommendations,
+        "created_at": created_at,
+    }
+    storage.save_website_audit(audit_record)
+    return audit_record
+
+
+@app.get("/api/audits")
+async def get_audits():
+    return {"audits": storage.get_recent_audits(limit=12)}

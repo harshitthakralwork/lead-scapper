@@ -1,4 +1,5 @@
-/* Fieldlist Prospecting OS — Powered by Aceternity UI & 21st.dev Component Architecture */
+/* SparkXFlow Prospecting & Lead Intelligence Platform
+   Full-Stack Architecture: Playwright Headless Automation + SQLite CRM + Diagnostic Audit Studio */
 'use strict';
 
 const $ = selector => document.querySelector(selector);
@@ -6,6 +7,7 @@ const $$ = selector => [...document.querySelectorAll(selector)];
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const state = {
+  currentView: 'overview',
   result: null,
   jobId: null,
   busy: false,
@@ -17,7 +19,15 @@ const state = {
   status: null,
   searchQuery: '',
   selectedIds: new Set(),
-  theme: localStorage.getItem('fieldlist_theme') || 'midnight'
+  theme: localStorage.getItem('sparkxflow_theme') || 'midnight',
+  sidebarCollapsed: localStorage.getItem('sparkxflow_sidebar_collapsed') === 'true',
+  crmStatus: 'ALL',
+  crmListFilter: '',
+  crmSearch: '',
+  editingLeadId: null,
+  activeDetailItem: null,
+  savedLeads: [],
+  lists: []
 };
 
 /* ==========================================================================
@@ -114,24 +124,173 @@ async function api(path, options = {}) {
 let toastTimer;
 function toast(message) {
   clearTimeout(toastTimer);
-  $('#toast span').textContent = message;
-  $('#toast').hidden = false;
-  toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 3600);
+  const toastEl = $('#toast');
+  if (!toastEl) return;
+  toastEl.querySelector('span').textContent = message;
+  toastEl.hidden = false;
+  toastTimer = setTimeout(() => { toastEl.hidden = true; }, 3600);
 }
 
 function notice(message, type = 'info') {
+  const noticeEl = $('#notice');
+  if (!noticeEl) return;
   $('#notice-text').textContent = message;
-  $('#notice').className = `notice ${type}`;
-  $('#notice').setAttribute('role', type === 'error' ? 'alert' : 'status');
-  $('#notice').hidden = false;
+  noticeEl.className = `notice ${type}`;
+  noticeEl.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  noticeEl.hidden = false;
 }
 
 function clearNotice() {
-  $('#notice').hidden = true;
+  const noticeEl = $('#notice');
+  if (noticeEl) noticeEl.hidden = true;
+}
+
+async function copyText(value) {
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    const area = node('textarea');
+    area.value = value;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.append(area);
+    area.select();
+    document.execCommand('copy');
+    area.remove();
+  }
+  toast('Copied to clipboard.');
 }
 
 /* ==========================================================================
-   Aceternity UI: Interactive 3D Cubes Grid Background
+   Multi-View Router & Sidebar Management
+   ========================================================================== */
+
+const VIEW_TITLES = {
+  overview: 'Overview',
+  finder: 'Business Finder',
+  'saved-leads': 'Saved Leads',
+  lists: 'Lead Lists',
+  audit: 'Website Audit Studio',
+  enrichment: 'Contact Enrichment',
+  campaigns: 'Outreach Campaigns',
+  settings: 'Preferences & Storage'
+};
+
+function switchView(viewName) {
+  if (!VIEW_TITLES[viewName]) viewName = 'overview';
+  state.currentView = viewName;
+
+  // 1. Update navigation active state
+  $$('#app-sidebar .nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === viewName);
+  });
+
+  // 2. Update topbar breadcrumb
+  const breadcrumbEl = $('#breadcrumb-current-view');
+  if (breadcrumbEl) {
+    breadcrumbEl.textContent = VIEW_TITLES[viewName];
+  }
+
+  // 3. Switch active workspace container
+  $$('.workspace-view').forEach(view => {
+    view.classList.remove('active');
+  });
+  const targetView = $(`#view-${viewName}`);
+  if (targetView) {
+    targetView.classList.add('active');
+  }
+
+  // 4. Update URL hash without causing a page jump
+  if (window.location.hash.replace('#', '') !== viewName) {
+    history.replaceState(null, '', `#${viewName}`);
+  }
+
+  // 5. Trigger view-specific data refresh
+  if (viewName === 'overview') {
+    loadPlatformMetrics();
+    refreshHistory();
+  } else if (viewName === 'saved-leads') {
+    loadSavedLeads();
+    loadLeadLists();
+  } else if (viewName === 'lists') {
+    loadLeadLists();
+  } else if (viewName === 'audit') {
+    loadRecentAudits();
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function initSidebar() {
+  const sidebar = $('#app-sidebar');
+  const appShell = $('#app-shell');
+  const collapseBtn = $('#sidebar-collapse-btn');
+
+  if (state.sidebarCollapsed) {
+    sidebar?.classList.add('collapsed');
+    appShell?.classList.add('sidebar-collapsed');
+  }
+
+  collapseBtn?.addEventListener('click', () => {
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    appShell?.classList.toggle('sidebar-collapsed', isCollapsed);
+    state.sidebarCollapsed = isCollapsed;
+    localStorage.setItem('sparkxflow_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+  });
+
+  // Wire all nav items
+  $$('[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  // Wire quick action cards in Overview
+  $$('[data-view-jump]').forEach(card => {
+    card.addEventListener('click', () => switchView(card.dataset.viewJump));
+  });
+}
+
+/* ==========================================================================
+   Platform Metrics & Overview Intelligence
+   ========================================================================== */
+
+async function loadPlatformMetrics() {
+  try {
+    const data = await api('/api/metrics');
+    if (!data) return;
+
+    if ($('#stat-inspected')) $('#stat-inspected').textContent = Number(data.total_discovered_businesses || 0).toLocaleString();
+    if ($('#stat-missing')) {
+      $('#stat-missing').replaceChildren(
+        document.createTextNode(Number(data.missing_website_leads || 0).toLocaleString()),
+        node('span', 'stat-tag', 'OPPORTUNITIES')
+      );
+    }
+    if ($('#stat-share')) {
+      const share = data.total_discovered_businesses ? Math.round((data.missing_website_leads / data.total_discovered_businesses) * 100) : 0;
+      $('#stat-share').replaceChildren(document.createTextNode(share), node('span', 'stat-percent', '%'));
+    }
+
+    // Sidebar & CRM Badges
+    const leadsBadge = $('#nav-leads-badge');
+    if (leadsBadge) leadsBadge.textContent = data.saved_leads_count || 0;
+    const listsBadge = $('#nav-lists-badge');
+    if (listsBadge) listsBadge.textContent = data.lead_lists_count || 0;
+
+    // Status Tab Badges
+    if ($('#crm-count-all')) $('#crm-count-all').textContent = data.saved_leads_count || 0;
+    if (data.leads_by_status) {
+      Object.entries(data.leads_by_status).forEach(([st, cnt]) => {
+        const badge = $(`#crm-count-${st.toLowerCase()}`);
+        if (badge) badge.textContent = cnt;
+      });
+    }
+  } catch (err) {
+    console.warn('Metrics refresh skipped:', err);
+  }
+}
+
+/* ==========================================================================
+   Canvas & Mouse Spotlights (Aceternity UI Grid)
    ========================================================================== */
 
 function initAceternityCubesGrid() {
@@ -164,9 +323,7 @@ function initAceternityCubesGrid() {
     mouse.y += (mouse.targetY - mouse.y) * 0.08;
 
     ctx.clearRect(0, 0, width, height);
-
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    const isMidnight = document.documentElement.getAttribute('data-theme') === 'midnight';
 
     const cols = Math.ceil(width / cubeSize) + 4;
     const rows = Math.ceil(height / (cubeSize * 0.6)) + 4;
@@ -188,7 +345,7 @@ function initAceternityCubesGrid() {
 
         const wave = Math.sin(time + (x + y) * 0.006) * 0.5 + 0.5;
 
-        // Cube top face
+        // Draw cube polygon
         ctx.beginPath();
         ctx.moveTo(x, y - 8);
         ctx.lineTo(x + 18, y);
@@ -197,24 +354,17 @@ function initAceternityCubesGrid() {
         ctx.closePath();
 
         if (intensity > 0.02) {
-          if (isMidnight) {
-            ctx.fillStyle = `rgba(59, 130, 246, ${intensity * 0.35})`;
-            ctx.strokeStyle = `rgba(6, 182, 212, ${0.1 + intensity * 0.7})`;
-          } else if (isLight) {
-            ctx.fillStyle = `rgba(37, 99, 235, ${intensity * 0.15})`;
-            ctx.strokeStyle = `rgba(37, 99, 235, ${0.1 + intensity * 0.4})`;
-          } else {
-            ctx.fillStyle = `rgba(59, 130, 246, ${intensity * 0.25})`;
-            ctx.strokeStyle = `rgba(96, 165, 250, ${0.08 + intensity * 0.6})`;
-          }
+          ctx.fillStyle = `rgba(22, 133, 248, ${(intensity * 0.28).toFixed(3)})`;
+          ctx.strokeStyle = `rgba(22, 133, 248, ${(intensity * 0.6 + 0.1).toFixed(3)})`;
+          ctx.lineWidth = 1;
           ctx.fill();
+          ctx.stroke();
         } else {
-          ctx.strokeStyle = isLight
-            ? `rgba(0, 0, 0, ${0.025 + wave * 0.02})`
-            : `rgba(255, 255, 255, ${0.02 + wave * 0.02})`;
+          const baseAlpha = isLight ? (0.02 + wave * 0.02) : (0.012 + wave * 0.018);
+          ctx.strokeStyle = isLight ? `rgba(100, 116, 139, ${baseAlpha.toFixed(3)})` : `rgba(255, 255, 255, ${baseAlpha.toFixed(3)})`;
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
         }
-        ctx.lineWidth = 1;
-        ctx.stroke();
       }
     }
     requestAnimationFrame(draw);
@@ -222,77 +372,41 @@ function initAceternityCubesGrid() {
   requestAnimationFrame(draw);
 }
 
-/* ==========================================================================
-   Aceternity Spotlight Mouse-Tracking for Cards
-   ========================================================================== */
-
 function initSpotlightCards() {
-  document.addEventListener('mousemove', e => {
-    $$('.spotlight-card').forEach(card => {
+  $$('.spotlight-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      card.style.setProperty('--card-mouse-x', `${x}px`);
-      card.style.setProperty('--card-mouse-y', `${y}px`);
+      card.style.setProperty('--spotlight-x', `${x}px`);
+      card.style.setProperty('--spotlight-y', `${y}px`);
     });
   });
 }
 
 /* ==========================================================================
-   Theme Switcher (Midnight / Dark / Light)
+   Theme Management
    ========================================================================== */
 
-function applyTheme(themeName) {
-  state.theme = themeName;
-  document.documentElement.setAttribute('data-theme', themeName);
-  localStorage.setItem('fieldlist_theme', themeName);
-
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('sparkxflow_theme', theme);
+  state.theme = theme;
   const iconUse = $('#theme-icon use');
   if (iconUse) {
-    if (themeName === 'light') iconUse.setAttribute('href', '#i-sun');
-    else if (themeName === 'midnight') iconUse.setAttribute('href', '#i-spark');
-    else iconUse.setAttribute('href', '#i-moon');
+    iconUse.setAttribute('href', theme === 'light' ? '#i-sun' : '#i-moon');
   }
 }
 
 function cycleTheme() {
-  const nextTheme = state.theme === 'midnight' ? 'dark' : state.theme === 'dark' ? 'light' : 'midnight';
-  applyTheme(nextTheme);
-  const prettyName = nextTheme === 'midnight' ? 'Midnight Cyber' : nextTheme === 'dark' ? 'Deep Charcoal' : 'Clean Light';
-  toast(`Theme switched to ${prettyName}`);
+  const themes = ['midnight', 'dark', 'light'];
+  const next = themes[(themes.indexOf(state.theme) + 1) % themes.length];
+  applyTheme(next);
+  toast(`Switched theme to ${next.toUpperCase()}`);
 }
 
 /* ==========================================================================
-   21st.dev Style Command Palette (Ctrl+K)
-   ========================================================================== */
-
-function openCommandPalette() {
-  const dialog = $('#cmd-palette-dialog');
-  if (!dialog) return;
-  dialog.showModal();
-  const input = $('#cmd-search-input');
-  if (input) {
-    input.value = '';
-    input.focus();
-  }
-  filterCommandList('');
-}
-
-function closeCommandPalette() {
-  const dialog = $('#cmd-palette-dialog');
-  if (dialog && dialog.open) dialog.close();
-}
-
-function filterCommandList(query) {
-  const q = query.toLowerCase().trim();
-  $$('#cmd-list .cmd-item').forEach(item => {
-    const text = item.textContent.toLowerCase();
-    item.hidden = q !== '' && !text.includes(q);
-  });
-}
-
-/* ==========================================================================
-   Status & Allowance
+   Status & Search History
    ========================================================================== */
 
 async function refreshStatus() {
@@ -313,8 +427,12 @@ async function refreshHistory() {
   try {
     const { searches } = await api('/api/history');
     const list = $('#recent-list');
+    if (!list) return;
     list.replaceChildren();
-    $('#recent').hidden = searches.length === 0;
+    if (!searches || searches.length === 0) {
+      list.append(node('p', 'table-empty-sub', 'No cached searches yet. Run your first search above.'));
+      return;
+    }
     for (const search of searches) {
       const button = node('button', 'recent-item');
       button.type = 'button';
@@ -330,7 +448,7 @@ async function refreshHistory() {
         $('#city').value = search.city;
         $('#limit').value = search.limit;
         $('#only-missing').checked = true;
-        $('#finder').scrollIntoView({ behavior: 'smooth' });
+        switchView('finder');
         $('#search-form').requestSubmit();
       });
       list.append(button);
@@ -339,7 +457,7 @@ async function refreshHistory() {
 }
 
 /* ==========================================================================
-   Search & Job Progress
+   Business Finder Search & Polling
    ========================================================================== */
 
 function setBusy(busy) {
@@ -359,6 +477,8 @@ function setBusy(busy) {
   if (busy) {
     $('#export-csv').disabled = true;
     $('#copy-all-phones').disabled = true;
+    $('#copy-sheets').disabled = true;
+    $('#save-selected-leads').disabled = true;
     $('#table-container').hidden = true;
     $('#empty-state').hidden = false;
     $('#empty-state').classList.add('searching');
@@ -421,7 +541,7 @@ async function pollJob() {
       state.jobId = null;
       renderResult(job.result);
       playSuccessChime();
-      await Promise.all([refreshStatus(), refreshHistory()]);
+      await Promise.all([refreshStatus(), refreshHistory(), loadPlatformMetrics()]);
       return;
     }
     if (job.status === 'failed') {
@@ -481,7 +601,7 @@ async function startSearch(event) {
       setBusy(false);
       renderResult(response.result);
       toast('Loaded from cache instantly.');
-      await refreshStatus();
+      await Promise.all([refreshStatus(), loadPlatformMetrics()]);
     } else {
       state.jobId = response.job.id;
       state.pollErrors = 0;
@@ -505,7 +625,6 @@ function visibleRows() {
   if (!state.result) return [];
   let rows = state.result.businesses.filter(item => state.filter === 'all' || item.website_status === 'missing');
   
-  // Quick Filter Pill bar logic
   if (state.activePill && state.activePill !== 'all') {
     if (state.activePill === 'missing') {
       rows = rows.filter(item => item.website_status === 'missing');
@@ -540,45 +659,6 @@ function visibleRows() {
   return rows;
 }
 
-async function copyForGoogleSheets() {
-  const rows = visibleRows();
-  if (!rows.length) return toast('No businesses to copy.');
-  const headers = ['Business Name', 'Category', 'Phone', 'Address', 'Rating', 'Reviews', 'Website', 'Website Status', 'Claim Status', 'Plus Code', 'Google Maps Link'];
-  const tsvLines = [headers.join('\t')];
-  for (const b of rows) {
-    tsvLines.push([
-      b.name || '',
-      b.category || '',
-      b.phone || '',
-      b.address || '',
-      b.rating != null ? String(b.rating) : '',
-      b.reviews != null ? String(b.reviews) : '',
-      b.website || '',
-      b.website_status === 'missing' ? 'No website' : 'Linked',
-      b.is_claimed === false ? 'Unclaimed Profile' : 'Claimed',
-      b.plus_code || '',
-      b.maps_url || ''
-    ].map(val => String(val).replace(/[\t\r\n]/g, ' ')).join('\t'));
-  }
-  const tsv = tsvLines.join('\n');
-  try {
-    await navigator.clipboard.writeText(tsv);
-    toast(`Copied ${rows.length} leads! Paste directly into Google Sheets (Ctrl+V)`);
-  } catch {
-    copyText(tsv);
-  }
-}
-
-function externalLink(url, className, text, iconName = 'external') {
-  const anchor = node('a', className);
-  anchor.href = safeLink(url);
-  anchor.target = '_blank';
-  anchor.rel = 'noopener noreferrer';
-  if (text) anchor.append(document.createTextNode(text));
-  anchor.append(icon(iconName));
-  return anchor;
-}
-
 function websiteBadge(item) {
   const missing = item.website_status === 'missing';
   const badge = node('span', `website-badge ${missing ? 'missing' : 'linked'}`);
@@ -591,8 +671,39 @@ function updateExportButtonLabel() {
   const label = $('#export-csv-text') || $('#export-csv');
   if (count > 0) {
     label.textContent = `Export Selected (${count})`;
+    if ($('#save-selected-leads')) $('#save-selected-leads').textContent = `Save Selected (${count})`;
+    if ($('#save-selected-leads')) $('#save-selected-leads').disabled = false;
   } else {
     label.textContent = 'Download CSV';
+    if ($('#save-selected-leads')) $('#save-selected-leads').textContent = 'Save to Leads';
+    if ($('#save-selected-leads')) $('#save-selected-leads').disabled = true;
+  }
+}
+
+async function saveLeadToCRM(business, listName = null) {
+  try {
+    await api('/api/leads', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: business.name,
+        category: business.category,
+        phone: business.phone,
+        address: business.address,
+        rating: business.rating,
+        reviews: business.reviews,
+        website: business.website,
+        website_status: business.website_status,
+        maps_url: business.maps_url,
+        plus_code: business.plus_code,
+        status: 'NEW',
+        list_name: listName,
+        source: 'Google Maps'
+      })
+    });
+    toast(`Saved "${business.name}" to CRM Leads!`);
+    loadPlatformMetrics();
+  } catch (err) {
+    notice(err.message, 'error');
   }
 }
 
@@ -655,7 +766,7 @@ function renderTable() {
     });
     tdCheck.append(checkbox);
 
-    // 2. Business name
+    // 2. Business name (Styled cleanly with zero native button borders)
     const business = node('td');
     business.dataset.label = 'Business';
     const button = node('button', 'business-button');
@@ -674,7 +785,6 @@ function renderTable() {
       phoneBox.append(node('span', 'phone-number', item.phone));
 
       const actions = node('div', 'cell-actions');
-      // WhatsApp Direct Link
       if (cleanDigits.length >= 8) {
         const waNum = cleanDigits.startsWith('+') ? cleanDigits.slice(1) : (cleanDigits.length === 10 ? '91' + cleanDigits : cleanDigits);
         const waLink = node('a', 'action-chip wa-chip');
@@ -685,7 +795,6 @@ function renderTable() {
         waLink.append(icon('whatsapp'));
         actions.append(waLink);
       }
-      // Copy phone
       const copyBtn = node('button', 'action-chip copy-chip');
       copyBtn.type = 'button';
       copyBtn.title = 'Copy phone number';
@@ -719,27 +828,57 @@ function renderTable() {
     address.dataset.label = 'Address';
     address.append(node('div', 'address-text', item.address || 'Not listed'));
     if (item.plus_code) address.append(node('div', 'plus-code-chip', item.plus_code));
-    if (item.hours) {
-      const shortHours = item.hours.split(';')[0].replace(/Hours:\s*/i, '').trim();
-      address.append(node('div', 'hours-chip', shortHours));
-    }
 
     // 7. Website Badge
     const website = node('td');
     website.dataset.label = 'Website';
     website.append(websiteBadge(item));
 
-    // 8. Actions / Maps link
+    // 8. Row Actions (Save Lead, Audit, Maps)
     const actionsTd = node('td', 'actions-cell');
-    actionsTd.dataset.label = 'Map';
-    const link = externalLink(item.maps_url, 'map-link', '', 'external');
-    link.setAttribute('aria-label', `Open ${item.name} on Google Maps`);
-    link.title = 'Open Google Maps';
-    actionsTd.append(link);
+    actionsTd.dataset.label = 'Actions';
+
+    const saveBtn = node('button', 'action-chip', '');
+    saveBtn.type = 'button';
+    saveBtn.title = 'Save to CRM Leads';
+    saveBtn.append(icon('bookmark'));
+    saveBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      saveLeadToCRM(item);
+    });
+    actionsTd.append(saveBtn);
+
+    if (item.website) {
+      const auditBtn = node('button', 'action-chip', '');
+      auditBtn.type = 'button';
+      auditBtn.title = 'Run Diagnostic Audit on Website';
+      auditBtn.append(icon('activity'));
+      auditBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        switchView('audit');
+        $('#audit-url-input').value = item.website;
+        $('#audit-form').requestSubmit();
+      });
+      actionsTd.append(auditBtn);
+    }
+
+    const mapLink = externalLink(item.maps_url, 'action-chip', '', 'external');
+    mapLink.title = 'Open on Google Maps';
+    actionsTd.append(mapLink);
 
     tr.append(tdCheck, business, phoneCell, rating, reviews, address, website, actionsTd);
     body.append(tr);
   }
+}
+
+function externalLink(url, className, text, iconName = 'external') {
+  const anchor = node('a', className);
+  anchor.href = safeLink(url);
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  if (text) anchor.append(document.createTextNode(text));
+  anchor.append(icon(iconName));
+  return anchor;
 }
 
 function renderResult(result) {
@@ -777,46 +916,25 @@ function exportCsv() {
     rows = rows.filter(item => state.selectedIds.has(item.id || item.name));
   }
 
-  const headers = [
-    'Business name',
-    'Category',
-    'Business phone',
-    'Address',
-    'Plus code',
-    'Operating hours',
-    'Rating',
-    'Review count',
-    'Website URL',
-    'Website status',
-    'Google Maps URL',
-    'Observed at (UTC)',
-    'Niche',
-    'City'
-  ];
-
+  const headers = ['Business name', 'Category', 'Phone', 'Address', 'Plus code', 'Rating', 'Reviews', 'Website', 'Website status', 'Google Maps URL'];
   const records = rows.map(item => [
     item.name,
     item.category,
     item.phone,
     item.address,
     item.plus_code || '',
-    item.hours || '',
     item.rating,
     item.reviews,
     item.website,
     item.website_status === 'missing' ? 'No website linked' : 'Website linked',
-    item.maps_url,
-    item.observed_at,
-    state.result.niche,
-    state.result.city
+    item.maps_url
   ]);
 
   const csv = '\uFEFF' + [headers, ...records].map(record => record.map(csvCell).join(',')).join('\r\n');
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-  const slug = value => value.normalize('NFKD').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 55);
   const link = node('a');
   link.href = url;
-  link.download = `leads-${slug(state.result.niche)}-${slug(state.result.city)}-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.append(link);
   link.click();
   link.remove();
@@ -824,31 +942,479 @@ function exportCsv() {
   toast(`${rows.length} lead${rows.length === 1 ? '' : 's'} exported to CSV.`);
 }
 
-async function copyText(value) {
-  try {
-    await navigator.clipboard.writeText(value);
-  } catch {
-    const area = node('textarea');
-    area.value = value;
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    ($('#detail-dialog').open ? $('#detail-dialog') : document.body).append(area);
-    area.select();
-    const copied = document.execCommand('copy');
-    area.remove();
-    if (!copied) {
-      toast('Copy unavailable. Please select text manually.');
-      return;
-    }
+async function copyForGoogleSheets() {
+  const rows = visibleRows();
+  if (!rows.length) return toast('No businesses to copy.');
+  const headers = ['Business Name', 'Category', 'Phone', 'Address', 'Rating', 'Reviews', 'Website', 'Website Status', 'Google Maps Link'];
+  const tsvLines = [headers.join('\t')];
+  for (const b of rows) {
+    tsvLines.push([
+      b.name || '',
+      b.category || '',
+      b.phone || '',
+      b.address || '',
+      b.rating != null ? String(b.rating) : '',
+      b.reviews != null ? String(b.reviews) : '',
+      b.website || '',
+      b.website_status === 'missing' ? 'No website' : 'Linked',
+      b.maps_url || ''
+    ].map(val => String(val).replace(/[\t\r\n]/g, ' ')).join('\t'));
   }
-  toast('Copied to clipboard.');
+  const tsv = tsvLines.join('\n');
+  try {
+    await navigator.clipboard.writeText(tsv);
+    toast(`Copied ${rows.length} leads! Paste directly into Google Sheets (Ctrl+V)`);
+  } catch {
+    copyText(tsv);
+  }
 }
 
+/* ==========================================================================
+   Saved Leads CRM
+   ========================================================================== */
+
+async function loadSavedLeads() {
+  try {
+    const params = new URLSearchParams();
+    if (state.crmStatus && state.crmStatus !== 'ALL') params.append('status', state.crmStatus);
+    if (state.crmListFilter) params.append('list_name', state.crmListFilter);
+    if (state.crmSearch) params.append('search', state.crmSearch);
+
+    const data = await api(`/api/leads?${params.toString()}`);
+    state.savedLeads = data.leads || [];
+    renderSavedLeadsTable();
+  } catch (err) {
+    notice(err.message, 'error');
+  }
+}
+
+function renderSavedLeadsTable() {
+  const body = $('#crm-results-body');
+  const emptyState = $('#crm-empty-state');
+  const tableContainer = $('#crm-table-container');
+  if (!body) return;
+
+  body.replaceChildren();
+
+  if (!state.savedLeads.length) {
+    emptyState.hidden = false;
+    tableContainer.hidden = true;
+    return;
+  }
+
+  emptyState.hidden = true;
+  tableContainer.hidden = false;
+
+  for (const lead of state.savedLeads) {
+    const tr = node('tr');
+
+    // 1. Lead Name & Category
+    const tdName = node('td');
+    const nameBtn = node('button', 'business-button');
+    nameBtn.type = 'button';
+    nameBtn.append(node('span', 'business-name', lead.name), node('span', 'business-category', lead.category || 'Lead'));
+    nameBtn.addEventListener('click', () => openDetail(lead));
+    tdName.append(nameBtn);
+
+    // 2. Phone & WhatsApp
+    const tdPhone = node('td', 'phone-cell');
+    if (lead.phone) {
+      const cleanDigits = lead.phone.replace(/[^+\d]/g, '');
+      const phoneBox = node('div', 'phone-box');
+      phoneBox.append(node('span', 'phone-number', lead.phone));
+
+      const actions = node('div', 'cell-actions');
+      if (cleanDigits.length >= 8) {
+        const waNum = cleanDigits.startsWith('+') ? cleanDigits.slice(1) : (cleanDigits.length === 10 ? '91' + cleanDigits : cleanDigits);
+        const waLink = node('a', 'action-chip wa-chip');
+        waLink.href = `https://wa.me/${waNum}?text=${encodeURIComponent(`Hi ${lead.name}, reaching out regarding your business.`)}`;
+        waLink.target = '_blank';
+        waLink.rel = 'noopener noreferrer';
+        waLink.title = 'Chat on WhatsApp';
+        waLink.append(icon('whatsapp'));
+        actions.append(waLink);
+      }
+      const copyBtn = node('button', 'action-chip copy-chip');
+      copyBtn.type = 'button';
+      copyBtn.title = 'Copy phone';
+      copyBtn.append(icon('copy'));
+      copyBtn.addEventListener('click', () => copyText(lead.phone));
+      actions.append(copyBtn);
+
+      phoneBox.append(actions);
+      tdPhone.append(phoneBox);
+    } else {
+      tdPhone.textContent = 'Not listed';
+    }
+
+    // 3. Location
+    const tdLoc = node('td', 'address-cell');
+    tdLoc.append(node('div', 'address-text', lead.address || '—'));
+
+    // 4. Website
+    const tdWeb = node('td');
+    tdWeb.append(websiteBadge(lead));
+
+    // 5. Status Selector Dropdown
+    const tdStatus = node('td');
+    const select = node('select', `status-select status-${lead.status.toLowerCase()}`);
+    ['NEW', 'QUALIFIED', 'CONTACTED', 'INTERESTED', 'CONVERTED', 'REJECTED'].forEach(st => {
+      const opt = node('option', '', st);
+      opt.value = st;
+      opt.selected = lead.status === st;
+      select.append(opt);
+    });
+    select.addEventListener('change', async () => {
+      try {
+        await api(`/api/leads/${lead.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: select.value })
+        });
+        select.className = `status-select status-${select.value.toLowerCase()}`;
+        toast(`Updated "${lead.name}" status to ${select.value}`);
+        loadPlatformMetrics();
+      } catch (err) {
+        notice(err.message, 'error');
+      }
+    });
+    tdStatus.append(select);
+
+    // 6. List Badge
+    const tdList = node('td');
+    if (lead.list_name) {
+      const listPill = node('span', 'tag-pill', lead.list_name);
+      listPill.style.fontSize = '10.5px';
+      tdList.append(listPill);
+    } else {
+      tdList.textContent = '—';
+    }
+
+    // 7. Notes Chip
+    const tdNotes = node('td');
+    const notesBtn = node('button', `notes-chip ${lead.notes ? 'has-note' : ''}`);
+    notesBtn.type = 'button';
+    notesBtn.append(icon('edit'), document.createTextNode(lead.notes ? lead.notes.slice(0, 18) + '…' : '+ Note'));
+    notesBtn.addEventListener('click', () => openLeadNoteModal(lead));
+    tdNotes.append(notesBtn);
+
+    // 8. Delete & Dossier Actions
+    const tdActions = node('td', 'actions-cell');
+    const delBtn = node('button', 'action-chip', '');
+    delBtn.type = 'button';
+    delBtn.title = 'Remove lead';
+    delBtn.append(icon('trash'));
+    delBtn.addEventListener('click', async () => {
+      if (!confirm(`Delete lead "${lead.name}"?`)) return;
+      try {
+        await api(`/api/leads/${lead.id}`, { method: 'DELETE' });
+        toast(`Removed lead "${lead.name}"`);
+        loadSavedLeads();
+        loadPlatformMetrics();
+      } catch (err) {
+        notice(err.message, 'error');
+      }
+    });
+    tdActions.append(delBtn);
+
+    tr.append(tdName, tdPhone, tdLoc, tdWeb, tdStatus, tdList, tdNotes, tdActions);
+    body.append(tr);
+  }
+}
+
+function openLeadNoteModal(lead) {
+  state.editingLeadId = lead.id;
+  $('#note-dialog-title').textContent = `Note for ${lead.name}`;
+  $('#lead-note-input').value = lead.notes || '';
+  $('#lead-note-dialog').showModal();
+}
+
+async function saveLeadNote() {
+  if (!state.editingLeadId) return;
+  const noteText = $('#lead-note-input').value.trim();
+  try {
+    await api(`/api/leads/${state.editingLeadId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes: noteText })
+    });
+    $('#lead-note-dialog').close();
+    toast('Lead notes saved!');
+    loadSavedLeads();
+  } catch (err) {
+    notice(err.message, 'error');
+  }
+}
+
+/* ==========================================================================
+   Lead Lists Manager
+   ========================================================================== */
+
+async function loadLeadLists() {
+  try {
+    const data = await api('/api/lists');
+    state.lists = data.lists || [];
+    renderListsGrid();
+
+    // Populate CRM list filter dropdown
+    const filterSelect = $('#crm-list-filter');
+    if (filterSelect) {
+      filterSelect.replaceChildren(node('option', '', 'All Lists'));
+      filterSelect.firstChild.value = '';
+      for (const l of state.lists) {
+        const opt = node('option', '', `${l.name} (${l.lead_count})`);
+        opt.value = l.name;
+        opt.selected = state.crmListFilter === l.name;
+        filterSelect.append(opt);
+      }
+    }
+  } catch (err) {
+    console.warn('Lists load failed:', err);
+  }
+}
+
+function renderListsGrid() {
+  const container = $('#lists-container');
+  if (!container) return;
+  container.replaceChildren();
+
+  if (!state.lists.length) {
+    container.append(node('p', 'table-empty-sub', 'No segmented lists created yet. Create one above to organize your leads.'));
+    return;
+  }
+
+  const colors = ['#1685F8', '#16C784', '#F5A623', '#8B5CF6', '#06B6D4', '#EC4899'];
+  state.lists.forEach((list, idx) => {
+    const card = node('div', 'list-card spotlight-card');
+    card.dataset.spotlight = 'true';
+
+    const top = node('div');
+    const header = node('div', 'list-card-header');
+    const titleGroup = node('div', '', '');
+    titleGroup.style.display = 'flex';
+    titleGroup.style.alignItems = 'center';
+    titleGroup.style.gap = '8px';
+
+    const dot = node('span', 'list-color-tag');
+    dot.style.background = colors[idx % colors.length];
+    titleGroup.append(dot, node('h3', 'list-title', list.name));
+
+    const countBadge = node('span', 'nav-badge', `${list.lead_count} leads`);
+    header.append(titleGroup, countBadge);
+    top.append(header);
+
+    if (list.description) {
+      top.append(node('p', 'list-desc', list.description));
+    }
+    card.append(top);
+
+    const footer = node('div', 'list-card-footer');
+    footer.append(node('span', '', dateLabel(list.created_at)));
+
+    const actions = node('div', '', '');
+    actions.style.display = 'flex';
+    actions.style.gap = '6px';
+
+    const viewBtn = node('button', 'secondary-button small', 'View Leads');
+    viewBtn.type = 'button';
+    viewBtn.addEventListener('click', () => {
+      state.crmListFilter = list.name;
+      switchView('saved-leads');
+    });
+
+    const delBtn = node('button', 'action-chip', '');
+    delBtn.type = 'button';
+    delBtn.title = 'Delete list';
+    delBtn.append(icon('trash'));
+    delBtn.addEventListener('click', async () => {
+      if (!confirm(`Delete list "${list.name}"?`)) return;
+      try {
+        await api(`/api/lists/${encodeURIComponent(list.name)}`, { method: 'DELETE' });
+        toast(`Deleted list "${list.name}"`);
+        loadLeadLists();
+        loadPlatformMetrics();
+      } catch (err) {
+        notice(err.message, 'error');
+      }
+    });
+
+    actions.append(viewBtn, delBtn);
+    footer.append(actions);
+    card.append(footer);
+
+    container.append(card);
+  });
+  initSpotlightCards();
+}
+
+/* ==========================================================================
+   Website Audit Diagnostic Studio
+   ========================================================================== */
+
+async function runWebsiteAudit(event) {
+  event.preventDefault();
+  const urlInput = $('#audit-url-input');
+  const submitBtn = $('#audit-submit-btn');
+  const resultsContainer = $('#audit-results-container');
+  if (!urlInput || !urlInput.reportValidity()) return;
+
+  const url = urlInput.value.trim();
+  submitBtn.disabled = true;
+  submitBtn.replaceChildren(icon('globe', 'spinner'), node('span', '', 'Probing Website…'));
+
+  try {
+    const data = await api('/api/audit', {
+      method: 'POST',
+      body: JSON.stringify({ url })
+    });
+
+    resultsContainer.hidden = false;
+
+    // Scorecard KPIs
+    const statusVal = $('#audit-kpi-status');
+    statusVal.textContent = data.status_code ? `${data.status_code} OK` : 'Unreachable';
+    statusVal.style.color = data.status_code === 200 ? 'var(--accent-green)' : 'var(--accent-danger)';
+
+    const latencyVal = $('#audit-kpi-latency');
+    if (data.response_time_ms != null) {
+      latencyVal.textContent = `${data.response_time_ms}ms`;
+      latencyVal.className = `audit-kpi-val ${data.response_time_ms < 800 ? 'latency-fast' : data.response_time_ms < 2000 ? 'latency-moderate' : 'latency-slow'}`;
+      $('#audit-kpi-latency-note').textContent = data.response_time_ms < 800 ? 'Fast server TTFB' : data.response_time_ms < 2000 ? 'Moderate speed' : 'Slow server response!';
+    } else {
+      latencyVal.textContent = '—';
+    }
+
+    const sslVal = $('#audit-kpi-ssl');
+    sslVal.textContent = data.has_ssl ? 'HTTPS Secure' : 'Insecure HTTP';
+    sslVal.style.color = data.has_ssl ? 'var(--accent-green)' : 'var(--accent-danger)';
+
+    const mobileVal = $('#audit-kpi-mobile');
+    mobileVal.textContent = data.has_viewport ? 'Mobile Tag Set' : 'Missing Tag';
+    mobileVal.style.color = data.has_viewport ? 'var(--accent-green)' : 'var(--accent-danger)';
+
+    $('#audit-site-title').textContent = data.title ? data.title.slice(0, 40) + '…' : 'No title tag';
+
+    // Findings Checklist
+    const findingsList = $('#audit-findings-list');
+    findingsList.replaceChildren();
+
+    if (data.findings && data.findings.length) {
+      data.findings.forEach(f => {
+        const item = node('div', `finding-item ${f.severity}`);
+        const badge = node('span', `finding-badge ${f.severity}`, f.severity);
+        const textGroup = node('div');
+        textGroup.append(node('strong', '', f.issue), node('p', 'table-empty-sub', f.recommendation));
+        item.append(badge, textGroup);
+        findingsList.append(item);
+      });
+    }
+
+    // Tailored Sales Pitch
+    $('#audit-pitch-content').textContent = data.tailored_pitch || 'No sales pitch generated.';
+
+    toast('Website diagnostic audit complete!');
+    loadRecentAudits();
+  } catch (err) {
+    notice(err.message, 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.replaceChildren(icon('activity'), node('span', '', 'Run Diagnostic Probe'));
+  }
+}
+
+async function loadRecentAudits() {
+  try {
+    const data = await api('/api/audits');
+    const container = $('#recent-audits-list');
+    if (!container) return;
+    container.replaceChildren();
+
+    if (!data.audits || !data.audits.length) {
+      container.append(node('p', 'table-empty-sub', 'No audits recorded yet.'));
+      return;
+    }
+
+    data.audits.forEach(audit => {
+      const item = node('button', 'recent-item');
+      item.type = 'button';
+      item.append(icon('activity'));
+      const body = node('div');
+      body.append(node('strong', '', audit.url));
+      body.append(node('p', '', `${audit.status_code || 'Err'} · ${audit.response_time_ms ? audit.response_time_ms + 'ms' : '—'} · ${dateLabel(audit.audited_at)}`));
+      item.append(body, icon('arrow'));
+      item.addEventListener('click', () => {
+        $('#audit-url-input').value = audit.url;
+        $('#audit-form').requestSubmit();
+      });
+      container.append(item);
+    });
+  } catch (err) {
+    console.warn('Audits load skipped:', err);
+  }
+}
+
+/* ==========================================================================
+   Contact Enrichment Studio
+   ========================================================================== */
+
+function enrichContact() {
+  const input = $('#enrich-phone-input');
+  const output = $('#enrich-output');
+  if (!input || !output) return;
+
+  const raw = input.value.trim();
+  if (!raw) return toast('Please enter a phone number.');
+
+  const digits = raw.replace(/[^+\d]/g, '');
+  let e164 = digits;
+  if (!e164.startsWith('+')) {
+    if (e164.length === 10) e164 = '+91' + e164; // Default to India prefix or E.164
+    else e164 = '+' + e164;
+  }
+
+  const cleanWaNum = e164.replace('+', '');
+  const waUrl = `https://wa.me/${cleanWaNum}?text=${encodeURIComponent('Hi, reaching out regarding your business listing on Google Maps.')}`;
+
+  $('#enrich-e164').textContent = e164;
+  const waLink = $('#enrich-wa-link');
+  waLink.href = waUrl;
+  waLink.textContent = `wa.me/${cleanWaNum}`;
+
+  // Build vCard (.vcf)
+  const vcfContent = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    `FN:Lead ${digits.slice(-4)}`,
+    `TEL;TYPE=CELL:${e164}`,
+    'NOTE:Extracted via SparkXFlow Prospecting Platform',
+    'END:VCARD'
+  ].join('\r\n');
+
+  const vcardBtn = $('#enrich-vcard-btn');
+  vcardBtn.onclick = () => {
+    const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = node('a');
+    a.href = url;
+    a.download = `lead-${digits.slice(-4)}.vcf`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Downloaded contact vCard!');
+  };
+
+  output.hidden = false;
+  toast('Contact enriched and formatted!');
+}
+
+/* ==========================================================================
+   Dossier Modal & AI Cold Outreach Studio
+   ========================================================================== */
+
 function openDetail(item) {
+  state.activeDetailItem = item;
   $('#detail-title').textContent = item.name;
   $('#detail-category').textContent = item.category || 'LOCAL BUSINESS';
   
-  // Badges row
   const badgesRow = $('#detail-status');
   badgesRow.replaceChildren(websiteBadge(item));
   if (item.is_claimed === false) {
@@ -895,293 +1461,391 @@ function openDetail(item) {
   add('Reviews', item.reviews == null ? 'Not available' : Number(item.reviews).toLocaleString());
 
   if (item.website) {
-    const hostname = new URL(item.website).hostname;
-    add('Website', externalLink(item.website, '', hostname));
+    try {
+      const hostname = new URL(item.website).hostname;
+      add('Website', externalLink(item.website, '', hostname));
+    } catch {
+      add('Website', externalLink(item.website, '', item.website));
+    }
   } else {
-    add('Website', 'No website link on this Maps profile (High Opportunity)');
+    add('Website', 'No website detected (Primary Client Lead Opportunity)');
   }
 
-  $('#detail-observed').textContent = `Read from Google Maps · ${dateLabel(item.observed_at)}. Verify details before outreach.`;
+  $('#detail-observed').textContent = `Inspected ${dateLabel(item.observed_at || new Date().toISOString())}`;
   $('#detail-map').href = safeLink(item.maps_url);
 
-  // Generate Personalized AI Outreach Pitches
-  const city = state.result?.city || 'your area';
-  const category = item.category || 'business';
-  const name = item.name || 'there';
-  const ratingStr = item.rating ? `${item.rating}★` : '';
-
-  // 1. WhatsApp Pitch
-  let waMsg = '';
-  if (item.website_status === 'missing') {
-    waMsg = `Hi ${name}! I was looking for top ${category} providers in ${city} on Google Maps and came across your profile. You have great ${ratingStr} reputation, but I noticed you don't have an official website linked to your listing.\n\nCustomers searching on Google frequently click competitors who have a direct site with pricing & one-tap calling. I design high-converting, fast websites for ${category} businesses in ${city}. Would you like to see a quick free mockup demo for ${name}?`;
-  } else if (item.is_claimed === false) {
-    waMsg = `Hi ${name} team! Quick heads up: I noticed your Google Maps listing in ${city} is currently listed as unclaimed. If an unauthorized competitor claims it, you risk losing control of your reviews and customer calls. Would you like a free quick checklist on how to verify and lock your listing today?`;
+  const websiteBtn = $('#detail-website');
+  if (item.website) {
+    websiteBtn.href = safeLink(item.website);
+    websiteBtn.hidden = false;
   } else {
-    waMsg = `Hi ${name}! Saw your ${category} business in ${city} on Google Maps (${ratingStr} rating). We help local businesses in ${city} automate customer booking and get 2x more phone calls from local search. Are you currently taking on new clients?`;
+    websiteBtn.hidden = true;
   }
+
+  // Populate Personalized Outreach Studio
+  const businessName = item.name || 'there';
+  const category = item.category || 'local business';
+  const city = (item.address || '').split(',').slice(-2, -1)[0]?.trim() || 'your area';
+
+  // 1. WhatsApp Script
+  const waMsg = item.website
+    ? `Hi ${businessName}, I came across your Google Maps listing in ${city}. I noticed your website takes a bit to load on mobile phones. Would you be open to a 2-minute video showing how to speed it up to get more customer calls?`
+    : `Hi ${businessName}, noticed your Google Maps profile in ${city} has strong reviews, but no website linked for clients to see pricing or book online. I mocked up a fast mobile 1-page site for you—would you be open to a quick preview link?`;
   $('#outreach-wa-text').value = waMsg;
 
-  // WhatsApp Send Link
-  if (item.phone) {
-    const digits = item.phone.replace(/[^+\d]/g, '');
-    const waNum = digits.startsWith('+') ? digits.slice(1) : (digits.length === 10 ? '91' + digits : digits);
-    $('#detail-whatsapp-direct').href = `https://wa.me/${waNum}?text=${encodeURIComponent(waMsg)}`;
-    $('#detail-whatsapp-direct').hidden = false;
+  const cleanDigits = (item.phone || '').replace(/[^+\d]/g, '');
+  const waDirectBtn = $('#detail-whatsapp-direct');
+  if (cleanDigits.length >= 8) {
+    const waNum = cleanDigits.startsWith('+') ? cleanDigits.slice(1) : (cleanDigits.length === 10 ? '91' + cleanDigits : cleanDigits);
+    waDirectBtn.href = `https://wa.me/${waNum}?text=${encodeURIComponent(waMsg)}`;
+    waDirectBtn.style.display = 'inline-flex';
   } else {
-    $('#detail-whatsapp-direct').hidden = true;
+    waDirectBtn.style.display = 'none';
   }
 
-  // 2. Cold Email Pitch
-  const emailSubj = `Quick question about ${name}'s Google Maps listing in ${city}`;
-  const emailBody = `Hi ${name} team,\n\nI was researching ${category} services in ${city} on Google Maps and came across your profile.\n\n${item.website_status === 'missing' ? "I noticed you don't have an official website linked to your profile, meaning many prospective customers in " + city + " end up calling competing businesses with a website." : "I was looking at your online profile and noticed a few simple improvements that could increase your inbound calls from Google."}\n\nWe specialize in building modern, high-converting digital presence for local businesses in ${city}.\n\nWould you be open to a quick 5-minute chat this week?\n\nBest regards,\nProspecting Team`;
-  $('#outreach-email-subject').value = emailSubj;
+  // 2. Cold Email Script
+  const subject = item.website
+    ? `Quick speed suggestion for ${businessName}`
+    : `Missing website link on Google Maps for ${businessName}`;
+  const emailBody = `Hi ${businessName} team,
+
+I was researching top-rated ${category} providers in ${city} and found your business on Google Maps.
+
+${item.website ? `I noticed your current website takes a few seconds to load on mobile networks, which often causes prospective clients to bounce.` : `I noticed you don't currently have a website connected to your Google listing. When customers look for your pricing or portfolio, they cannot find a direct website link.`}
+
+We help local businesses convert map traffic into booked clients with high-speed, modern mobile websites.
+
+Would you be open to a brief 2-minute preview this week?
+
+Best regards,
+SparkXFlow Outreach`;
+  $('#outreach-email-subject').value = subject;
   $('#outreach-email-text').value = emailBody;
-  $('#outreach-email-mailto').href = `mailto:?subject=${encodeURIComponent(emailSubj)}&body=${encodeURIComponent(emailBody)}`;
+  $('#outreach-email-mailto').href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 
   // 3. Call Script
-  const callScript = `"Hi, this is [Your Name]. I was researching ${category} companies in ${city} on Google Maps. I noticed you have ${ratingStr || 'great'} customer reviews, but no website linked for online booking.\n\nWho handles your website and marketing so I can share a free preview mockup we created for ${name}?"`;
+  const callScript = `“Hi, is this the owner at ${businessName}? 
+
+My name is [Your Name]. I saw your business profile on Google Maps with great reviews in ${city}. 
+
+The reason for my quick call is that your profile is currently missing a direct website link, so potential customers searching for ${category} can't see your work or request quotes directly.
+
+I put together a quick 1-page design preview for you guys—who would be the best person to text or email that over to?”`;
   $('#outreach-call-text').value = callScript;
-  if (item.phone) {
-    $('#outreach-call-link').href = `tel:${item.phone.replace(/[^+\d]/g, '')}`;
-    $('#outreach-call-link').hidden = false;
-  } else {
-    $('#outreach-call-link').hidden = true;
-  }
-
-  $('#detail-website').hidden = !item.website;
-  if (item.website) $('#detail-website').href = safeLink(item.website);
-
-  // Reset to WhatsApp tab on open
-  $$('.outreach-tab').forEach(t => t.classList.remove('active'));
-  $('[data-tab="wa"]')?.classList.add('active');
-  $('#pane-wa').hidden = false;
-  $('#pane-email').hidden = true;
-  $('#pane-call').hidden = true;
+  $('#outreach-call-link').href = item.phone ? `tel:${item.phone.replace(/[^+\d]/g, '')}` : '#';
 
   $('#detail-dialog').showModal();
 }
 
 /* ==========================================================================
-   Event Listeners & Initialization
+   Command Palette & Keyboard Controls
    ========================================================================== */
 
-// Search form
-$('#search-form').addEventListener('submit', startSearch);
-$('#dismiss-notice').addEventListener('click', clearNotice);
-$('#export-csv').addEventListener('click', exportCsv);
-$('#copy-sheets')?.addEventListener('click', copyForGoogleSheets);
-$('#result-filter').addEventListener('change', event => { state.filter = event.target.value; renderTable(); });
-$('#sort-rating').addEventListener('click', () => {
-  state.sort = state.sort === 'default' ? 'desc' : state.sort === 'desc' ? 'asc' : 'default';
-  renderTable();
-});
+function openCommandPalette() {
+  const dialog = $('#cmd-palette-dialog');
+  if (!dialog) return;
+  dialog.showModal();
+  $('#cmd-search-input')?.focus();
+  $('#cmd-search-input').value = '';
+  filterCommandList('');
+}
 
-// Quick Filter Pills
-$$('.filter-pill').forEach(pill => {
-  pill.addEventListener('click', () => {
-    $$('.filter-pill').forEach(p => p.classList.remove('active'));
+function closeCommandPalette() {
+  $('#cmd-palette-dialog')?.close();
+}
+
+function filterCommandList(query) {
+  const q = query.toLowerCase().trim();
+  $$('#cmd-list .cmd-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.hidden = q !== '' && !text.includes(q);
+  });
+}
+
+/* ==========================================================================
+   Event Listeners & Boot
+   ========================================================================== */
+
+function setupEventListeners() {
+  // Navigation & Router
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && VIEW_TITLES[hash]) switchView(hash);
+  });
+
+  // Search form
+  $('#search-form')?.addEventListener('submit', startSearch);
+
+  // Quick filter pills in Finder table
+  $('#quick-filter-pills')?.addEventListener('click', e => {
+    const pill = e.target.closest('.filter-pill');
+    if (!pill) return;
+    $$('#quick-filter-pills .filter-pill').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
     state.activePill = pill.dataset.pill;
     renderTable();
   });
-});
 
-// Outreach Studio Tabs
-$$('.outreach-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    $$('.outreach-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    const target = tab.dataset.tab;
-    $('#pane-wa').hidden = target !== 'wa';
-    $('#pane-email').hidden = target !== 'email';
-    $('#pane-call').hidden = target !== 'call';
+  // Rating sort button
+  $('#sort-rating')?.addEventListener('click', () => {
+    state.sort = state.sort === 'default' ? 'desc' : state.sort === 'desc' ? 'asc' : 'default';
+    renderTable();
   });
-});
 
-// Outreach Pitch Copy Buttons
-$('#copy-wa-pitch')?.addEventListener('click', () => {
-  copyText($('#outreach-wa-text').value);
-  toast('WhatsApp pitch copied to clipboard!');
-});
-$('#copy-email-pitch')?.addEventListener('click', () => {
-  copyText(`Subject: ${$('#outreach-email-subject').value}\n\n${$('#outreach-email-text').value}`);
-  toast('Cold email pitch copied to clipboard!');
-});
-$('#copy-call-pitch')?.addEventListener('click', () => {
-  copyText($('#outreach-call-text').value);
-  toast('Phone script copied to clipboard!');
-});
+  // Export buttons
+  $('#export-csv')?.addEventListener('click', exportCsv);
+  $('#copy-sheets')?.addEventListener('click', copyForGoogleSheets);
+  $('#copy-all-phones')?.addEventListener('click', () => {
+    const rows = visibleRows();
+    const phones = rows.map(r => r.phone).filter(p => p && p !== 'Not listed');
+    if (!phones.length) return toast('No phone numbers found in current view.');
+    const uniquePhones = [...new Set(phones)];
+    copyText(uniquePhones.join('\n'));
+    toast(`${uniquePhones.length} phone numbers copied to clipboard!`);
+  });
 
-// Copy all phones button
-$('#copy-all-phones').addEventListener('click', () => {
-  const rows = visibleRows();
-  const phones = rows.map(r => r.phone).filter(p => p && p !== 'Not listed');
-  if (!phones.length) {
-    toast('No phone numbers found in current view.');
-    return;
-  }
-  const uniquePhones = [...new Set(phones)];
-  copyText(uniquePhones.join('\n'));
-  toast(`${uniquePhones.length} phone numbers copied to clipboard!`);
-});
+  // Bulk save selected leads
+  $('#save-selected-leads')?.addEventListener('click', async () => {
+    const rows = visibleRows().filter(r => state.selectedIds.has(r.id || r.name));
+    if (!rows.length) return toast('No leads selected.');
+    let saved = 0;
+    for (const r of rows) {
+      await saveLeadToCRM(r);
+      saved++;
+    }
+    toast(`Successfully saved ${saved} leads to CRM!`);
+  });
 
-// Sidebar Navigation Smooth Scroll & Active Tracking
-function setActiveNav(targetId) {
-  $$('.nav-links .nav-item').forEach(item => {
-    if (item.dataset.target) {
-      item.classList.toggle('active', item.dataset.target === targetId);
+  // Dossier dialog save button
+  $('#detail-save-lead-btn')?.addEventListener('click', () => {
+    if (state.activeDetailItem) {
+      saveLeadToCRM(state.activeDetailItem);
     }
   });
-}
 
-$('#nav-overview')?.addEventListener('click', e => {
-  e.preventDefault();
-  setActiveNav('overview');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  history.replaceState(null, '', window.location.pathname);
-});
-
-$('#nav-finder')?.addEventListener('click', e => {
-  e.preventDefault();
-  setActiveNav('finder');
-  const finderEl = document.getElementById('finder-section') || document.querySelector('.search-card');
-  if (finderEl) {
-    const yOffset = -70;
-    const y = finderEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-    setTimeout(() => $('#niche')?.focus(), 300);
-  }
-  history.replaceState(null, '', window.location.pathname);
-});
-
-$('#nav-recent')?.addEventListener('click', e => {
-  e.preventDefault();
-  setActiveNav('recent');
-  const recentEl = document.getElementById('recent');
-  if (recentEl) {
-    recentEl.hidden = false;
-    const yOffset = -70;
-    const y = recentEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-  }
-  history.replaceState(null, '', window.location.pathname);
-});
-
-window.addEventListener('scroll', () => {
-  const recentEl = document.getElementById('recent');
-  const finderEl = document.getElementById('finder-section');
-  if (recentEl && !recentEl.hidden && recentEl.getBoundingClientRect().top <= 220) {
-    setActiveNav('recent');
-  } else if (finderEl && finderEl.getBoundingClientRect().top <= 220) {
-    setActiveNav('finder');
-  } else {
-    setActiveNav('overview');
-  }
-}, { passive: true });
-
-// Select all checkbox
-$('#select-all')?.addEventListener('change', e => {
-  const rows = visibleRows();
-  if (e.target.checked) {
-    rows.forEach(r => state.selectedIds.add(r.id || r.name));
-  } else {
-    state.selectedIds.clear();
-  }
-  renderTable();
-});
-
-// Instant live search filter
-$('#table-search')?.addEventListener('input', e => {
-  state.searchQuery = e.target.value;
-  renderTable();
-});
-
-// Cancel search
-$('#cancel-search').addEventListener('click', async () => {
-  if (!state.jobId) return;
-  $('#cancel-search').disabled = true;
-  $('#cancel-search').textContent = 'Stopping…';
-  try {
-    await api(`/api/jobs/${state.jobId}/cancel`, { method: 'POST' });
-  } catch (error) {
-    notice(error.message, 'error');
-    $('#cancel-search').disabled = false;
-  }
-});
-
-// Quick suggestion buttons (trades)
-$$('[data-niche]').forEach(button => button.addEventListener('click', () => {
-  if (state.busy) return;
-  $('#niche').value = button.dataset.niche;
-  $('#city').value = button.dataset.city;
-  $('#niche').focus();
-  toast('Trade set. Hit "Find businesses" to start.');
-}));
-
-// Theme toggle
-$('#theme-toggle-btn')?.addEventListener('click', cycleTheme);
-$('#cmd-action-toggle-theme')?.addEventListener('click', () => {
-  cycleTheme();
-  closeCommandPalette();
-});
-
-// Command palette triggers
-$('#cmd-palette-btn')?.addEventListener('click', openCommandPalette);
-$('#sidebar-cmd-btn')?.addEventListener('click', openCommandPalette);
-$('#nav-cmd-trigger')?.addEventListener('click', openCommandPalette);
-$('[data-close-cmd]')?.addEventListener('click', closeCommandPalette);
-
-$('#cmd-search-input')?.addEventListener('input', e => {
-  filterCommandList(e.target.value);
-});
-
-$$('[data-cmd-niche]').forEach(item => {
-  item.addEventListener('click', () => {
-    closeCommandPalette();
-    $('#niche').value = item.dataset.cmdNiche;
-    $('#city').value = item.dataset.cmdCity;
-    $('#search-form').requestSubmit();
+  // CRM Status Tabs
+  $('#crm-status-tabs')?.addEventListener('click', e => {
+    const tab = e.target.closest('.crm-tab');
+    if (!tab) return;
+    $$('#crm-status-tabs .crm-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    state.crmStatus = tab.dataset.status;
+    loadSavedLeads();
   });
-});
 
-$('#cmd-action-export')?.addEventListener('click', () => {
-  closeCommandPalette();
-  exportCsv();
-});
+  // CRM List Filter & Search
+  $('#crm-list-filter')?.addEventListener('change', e => {
+    state.crmListFilter = e.target.value;
+    loadSavedLeads();
+  });
+  $('#crm-search-input')?.addEventListener('input', e => {
+    state.crmSearch = e.target.value;
+    loadSavedLeads();
+  });
 
-$('#cmd-action-copy-phones')?.addEventListener('click', () => {
-  closeCommandPalette();
-  $('#copy-all-phones')?.click();
-});
+  // CRM Copy phones & Export CSV
+  $('#crm-copy-phones')?.addEventListener('click', () => {
+    const phones = state.savedLeads.map(l => l.phone).filter(p => p && p !== 'Not listed');
+    if (!phones.length) return toast('No phone numbers found in saved leads.');
+    copyText([...new Set(phones)].join('\n'));
+    toast(`${phones.length} phones copied!`);
+  });
+  $('#crm-export-csv')?.addEventListener('click', () => {
+    if (!state.savedLeads.length) return toast('No saved leads to export.');
+    const headers = ['Name', 'Category', 'Phone', 'Address', 'Status', 'List', 'Website', 'Notes'];
+    const rows = state.savedLeads.map(l => [l.name, l.category, l.phone, l.address, l.status, l.list_name || '', l.website || '', l.notes || '']);
+    const csv = '\uFEFF' + [headers, ...rows].map(record => record.map(csvCell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const link = node('a');
+    link.href = url;
+    link.download = `saved-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(`${rows.length} saved leads exported!`);
+  });
 
-// Keyboard shortcuts (Cmd+K / Ctrl+K and /)
-window.addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+  // Notes Modal save button
+  $('#save-lead-note-btn')?.addEventListener('click', saveLeadNote);
+
+  // Lead List Creation Form
+  $('#create-list-form')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const dialog = $('#cmd-palette-dialog');
-    if (dialog && dialog.open) closeCommandPalette();
-    else openCommandPalette();
-    return;
-  }
-  if (e.key === 'Escape') {
+    const name = $('#new-list-name').value.trim();
+    const desc = $('#new-list-desc').value.trim();
+    if (!name) return;
+    try {
+      await api('/api/lists', {
+        method: 'POST',
+        body: JSON.stringify({ name, description: desc })
+      });
+      $('#new-list-name').value = '';
+      $('#new-list-desc').value = '';
+      toast(`Created list "${name}"`);
+      loadLeadLists();
+      loadPlatformMetrics();
+    } catch (err) {
+      notice(err.message, 'error');
+    }
+  });
+
+  // Website Audit Studio Form
+  $('#audit-form')?.addEventListener('submit', runWebsiteAudit);
+  $('#copy-audit-pitch-btn')?.addEventListener('click', () => {
+    copyText($('#audit-pitch-content').textContent);
+    toast('Audit sales pitch copied!');
+  });
+
+  // Contact Enrichment
+  $('#enrich-process-btn')?.addEventListener('click', enrichContact);
+
+  // Campaign templates copy buttons
+  $$('[data-copy-camp]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.copyCamp;
+      const text = $(`#${targetId}`)?.textContent || '';
+      copyText(text);
+      toast('Campaign template copied!');
+    });
+  });
+
+  // Dossier outreach tabs
+  $$('.outreach-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      $$('.outreach-tab').forEach(t => t.classList.remove('active'));
+      $$('.outreach-pane').forEach(p => p.hidden = true);
+      tab.classList.add('active');
+      $(`#pane-${tab.dataset.tab}`).hidden = false;
+    });
+  });
+
+  // Outreach Pitch Copy Buttons
+  $('#copy-wa-pitch')?.addEventListener('click', () => {
+    copyText($('#outreach-wa-text').value);
+    toast('WhatsApp pitch copied to clipboard!');
+  });
+  $('#copy-email-pitch')?.addEventListener('click', () => {
+    copyText(`Subject: ${$('#outreach-email-subject').value}\n\n${$('#outreach-email-text').value}`);
+    toast('Cold email pitch copied to clipboard!');
+  });
+  $('#copy-call-pitch')?.addEventListener('click', () => {
+    copyText($('#outreach-call-text').value);
+    toast('Phone script copied to clipboard!');
+  });
+
+  // Select all checkbox
+  $('#select-all')?.addEventListener('change', e => {
+    const rows = visibleRows();
+    if (e.target.checked) {
+      rows.forEach(r => state.selectedIds.add(r.id || r.name));
+    } else {
+      state.selectedIds.clear();
+    }
+    renderTable();
+  });
+
+  // Instant live search filter
+  $('#table-search')?.addEventListener('input', e => {
+    state.searchQuery = e.target.value;
+    renderTable();
+  });
+
+  // Cancel search
+  $('#cancel-search')?.addEventListener('click', async () => {
+    if (!state.jobId) return;
+    $('#cancel-search').disabled = true;
+    $('#cancel-search').textContent = 'Stopping…';
+    try {
+      await api(`/api/jobs/${state.jobId}/cancel`, { method: 'POST' });
+    } catch (error) {
+      notice(error.message, 'error');
+      $('#cancel-search').disabled = false;
+    }
+  });
+
+  // Quick suggestion tag buttons
+  $$('[data-niche]').forEach(button => button.addEventListener('click', () => {
+    if (state.busy) return;
+    $('#niche').value = button.dataset.niche;
+    $('#city').value = button.dataset.city;
+    switchView('finder');
+    $('#niche').focus();
+    toast('Trade set. Hit "Find businesses" to start.');
+  }));
+
+  // Theme toggle
+  $('#theme-toggle-btn')?.addEventListener('click', cycleTheme);
+  $('#cmd-action-toggle-theme')?.addEventListener('click', () => {
+    cycleTheme();
     closeCommandPalette();
-  }
-  if (e.key === '/' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-    e.preventDefault();
-    $('#niche')?.focus();
-  }
-});
+  });
 
-// Modal dialog closers
-$$('[data-open-help]').forEach(button => button.addEventListener('click', () => $('#help-dialog').showModal()));
-$$('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
-$$('dialog').forEach(dialog => dialog.addEventListener('click', event => {
-  if (event.target !== dialog) return;
-  const rect = dialog.getBoundingClientRect();
-  if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
-    dialog.close();
-  }
-}));
+  // Command palette triggers
+  $('#cmd-palette-btn')?.addEventListener('click', openCommandPalette);
+  $('#nav-cmd-trigger')?.addEventListener('click', openCommandPalette);
+  $('[data-close-cmd]')?.addEventListener('click', closeCommandPalette);
+  $('#cmd-search-input')?.addEventListener('input', e => filterCommandList(e.target.value));
+
+  $$('[data-cmd-view]').forEach(item => {
+    item.addEventListener('click', () => {
+      closeCommandPalette();
+      switchView(item.dataset.cmdView);
+    });
+  });
+
+  $$('[data-cmd-niche]').forEach(item => {
+    item.addEventListener('click', () => {
+      closeCommandPalette();
+      $('#niche').value = item.dataset.cmdNiche;
+      $('#city').value = item.dataset.cmdCity;
+      switchView('finder');
+      $('#search-form').requestSubmit();
+    });
+  });
+
+  $('#cmd-action-export')?.addEventListener('click', () => {
+    closeCommandPalette();
+    exportCsv();
+  });
+
+  $('#cmd-action-copy-phones')?.addEventListener('click', () => {
+    closeCommandPalette();
+    $('#copy-all-phones')?.click();
+  });
+
+  // Keyboard shortcuts (Cmd+K / Ctrl+K and /)
+  window.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      const dialog = $('#cmd-palette-dialog');
+      if (dialog && dialog.open) closeCommandPalette();
+      else openCommandPalette();
+      return;
+    }
+    if (e.key === 'Escape') {
+      closeCommandPalette();
+    }
+    if (e.key === '/' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+      e.preventDefault();
+      switchView('finder');
+      $('#niche')?.focus();
+    }
+  });
+
+  // Modal dialog closers
+  $$('[data-open-help]').forEach(button => button.addEventListener('click', () => $('#help-dialog').showModal()));
+  $$('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
+  $$('dialog').forEach(dialog => dialog.addEventListener('click', event => {
+    if (event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
+      dialog.close();
+    }
+  }));
+
+  $('#dismiss-notice')?.addEventListener('click', clearNotice);
+}
 
 /* ==========================================================================
    Boot Application
@@ -1191,28 +1855,36 @@ async function initApp() {
   applyTheme(state.theme);
   initAceternityCubesGrid();
   initSpotlightCards();
+  initSidebar();
+  setupEventListeners();
 
-  await Promise.all([refreshStatus(), refreshHistory()]);
-
-  // Auto-load most recent search so dashboard is active immediately
-  if (!state.result && !state.busy) {
-    try {
-      const { searches } = await api('/api/history');
-      if (searches && searches.length > 0) {
-        const item = searches[0];
-        $('#niche').value = item.niche;
-        $('#city').value = item.city;
-        $('#limit').value = item.limit;
-        const res = await api('/api/search', {
-          method: 'POST',
-          body: JSON.stringify({ niche: item.niche, city: item.city, limit: item.limit, only_missing: true })
-        });
-        if (res.kind === 'cached' && res.result) {
-          renderResult(res.result);
-        }
-      }
-    } catch { /* Non-blocking */ }
+  // Restore view from URL hash if provided
+  const initialHash = window.location.hash.replace('#', '');
+  if (initialHash && VIEW_TITLES[initialHash]) {
+    switchView(initialHash);
+  } else {
+    switchView('overview');
   }
+
+  await Promise.all([refreshStatus(), refreshHistory(), loadPlatformMetrics()]);
+
+  // Pre-load initial search into finder if available
+  try {
+    const { searches } = await api('/api/history');
+    if (searches && searches.length > 0) {
+      const item = searches[0];
+      $('#niche').value = item.niche;
+      $('#city').value = item.city;
+      $('#limit').value = item.limit;
+      const res = await api('/api/search', {
+        method: 'POST',
+        body: JSON.stringify({ niche: item.niche, city: item.city, limit: item.limit, only_missing: true })
+      });
+      if (res.kind === 'cached' && res.result) {
+        renderResult(res.result);
+      }
+    }
+  } catch { /* Non-blocking */ }
 }
 
 initApp();

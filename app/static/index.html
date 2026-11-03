@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090a0f">
-  <meta name="description" content="Find local businesses with no website linked on Google Maps. Export public business details to CSV.">
-  <title>Fieldlist — Prospecting Operating System</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230f1015' stroke='%233b82f6' stroke-width='2'/%3E%3Cpath d='M20 9a8 8 0 0 0-8 8c0 6.5 8 14 8 14s8-7.5 8-14a8 8 0 0 0-8-8Z' fill='none' stroke='%2360a5fa' stroke-width='2.2'/%3E%3Ccircle cx='20' cy='17' r='2.8' fill='%233b82f6'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#080D18">
+  <meta name="description" content="SparkXFlow — Premium B2B Lead Intelligence & Prospecting Platform. Extract local businesses, audit websites, and launch cold outreach.">
+  <title>SparkXFlow — B2B Lead Intelligence & Prospecting Platform</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23080D18' stroke='%231685F8' stroke-width='2'/%3E%3Cpath d='M20 9a8 8 0 0 0-8 8c0 6.5 8 14 8 14s8-7.5 8-14a8 8 0 0 0-8-8Z' fill='none' stroke='%231685F8' stroke-width='2.2'/%3E%3Ccircle cx='20' cy='17' r='2.8' fill='%231685F8'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,11 +14,11 @@
   <script src="/static/app.js" defer></script>
 </head>
 <body>
-  <!-- Aceternity Background Interactive 3D Cubes Grid Canvas -->
+  <!-- Interactive Canvas & Spotlight Background -->
   <canvas id="bg-cubes-canvas" aria-hidden="true"></canvas>
   <div class="spotlight-layer" aria-hidden="true"></div>
 
-  <!-- SVG Sprite Library (Hidden) -->
+  <!-- SVG Sprite Library -->
   <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:none; position:absolute; width:0; height:0; overflow:hidden;">
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></symbol>
@@ -43,74 +43,92 @@
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
     <symbol id="i-command" viewBox="0 0 24 24"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></symbol>
     <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+    <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></symbol>
     <symbol id="i-whatsapp" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 00-3.48-8.413Z"/></symbol>
   </svg>
 
-  <!-- Left Sidebar (Aceternity Glass Style) -->
-  <aside class="sidebar" aria-label="Main navigation">
+  <!-- Left Sidebar (Collapsible with Grouped Navigation) -->
+  <aside class="sidebar" id="app-sidebar" aria-label="Main navigation">
     <div class="sidebar-top">
-      <a class="brand" href="/" aria-label="Fieldlist home">
+      <a class="brand" href="/" aria-label="SparkXFlow home">
         <span class="brand-mark">
           <svg class="icon"><use href="#i-layers"/></svg>
         </span>
-        <span class="brand-name">fieldlist<span class="brand-dot">.</span></span>
+        <span class="brand-name">Spark<span class="brand-dot">X</span>Flow</span>
       </a>
-      <button class="kbd-badge" id="sidebar-cmd-btn" title="Open Command Palette (Ctrl+K)">
-        <span class="kbd-key">⌘</span><span class="kbd-key">K</span>
+      <button class="sidebar-collapse-toggle" id="sidebar-collapse-btn" title="Toggle Sidebar (Collapse/Expand)" type="button">
+        <svg class="icon"><use href="#i-sidebar"/></svg>
       </button>
     </div>
 
     <div class="sidebar-scroll">
+      <!-- Section 1: Workspace -->
       <div class="nav-group">
         <div class="nav-section-title">Workspace</div>
         <nav class="nav-links">
-          <a class="nav-item active" id="nav-overview" href="#overview" data-target="overview">
+          <button class="nav-item active" type="button" data-view="overview" title="Overview">
             <svg class="icon"><use href="#i-grid"/></svg>
             <span>Overview</span>
-          </a>
-          <a class="nav-item" id="nav-finder" href="#finder-section" data-target="finder">
+          </button>
+          <button class="nav-item" type="button" data-view="finder" title="Business Finder">
             <svg class="icon"><use href="#i-search"/></svg>
-            <span>Business finder</span>
-          </a>
-          <a class="nav-item" id="nav-recent" href="#recent" data-target="recent">
-            <svg class="icon"><use href="#i-clock"/></svg>
-            <span>Recent searches</span>
-          </a>
-        </nav>
-      </div>
-
-      <div class="nav-group">
-        <div class="nav-section-title">Quick Targets</div>
-        <nav class="nav-links">
-          <button class="nav-item" type="button" data-niche="Electricians" data-city="Madison, WI">
-            <svg class="icon"><use href="#i-building"/></svg>
-            <span>Electricians</span>
+            <span>Business Finder</span>
           </button>
-          <button class="nav-item" type="button" data-niche="Plumbers" data-city="Nanaimo, BC">
-            <svg class="icon"><use href="#i-building"/></svg>
-            <span>Plumbers</span>
+          <button class="nav-item" type="button" data-view="saved-leads" title="Saved Leads">
+            <svg class="icon"><use href="#i-bookmark"/></svg>
+            <span>Saved Leads</span>
+            <span class="nav-badge" id="nav-leads-badge">0</span>
           </button>
-          <button class="nav-item" type="button" data-niche="Roofers" data-city="Austin, TX">
-            <svg class="icon"><use href="#i-building"/></svg>
-            <span>Roofers</span>
-          </button>
-          <button class="nav-item" type="button" data-niche="Dentists" data-city="Miami, FL">
-            <svg class="icon"><use href="#i-building"/></svg>
-            <span>Dentists</span>
+          <button class="nav-item" type="button" data-view="lists" title="Lead Lists">
+            <svg class="icon"><use href="#i-folder"/></svg>
+            <span>Lists</span>
+            <span class="nav-badge" id="nav-lists-badge">0</span>
           </button>
         </nav>
       </div>
 
+      <!-- Section 2: Tools -->
       <div class="nav-group">
-        <div class="nav-section-title">System & Docs</div>
+        <div class="nav-section-title">Tools</div>
         <nav class="nav-links">
-          <button class="nav-item" type="button" data-open-help>
+          <button class="nav-item" type="button" data-view="audit" title="Website Audit Studio">
+            <svg class="icon"><use href="#i-activity"/></svg>
+            <span>Website Audit</span>
+          </button>
+          <button class="nav-item" type="button" data-view="enrichment" title="Contact Enrichment">
+            <svg class="icon"><use href="#i-zap"/></svg>
+            <span>Enrichment</span>
+          </button>
+          <button class="nav-item" type="button" data-view="campaigns" title="Outreach Campaigns">
+            <svg class="icon"><use href="#i-mail"/></svg>
+            <span>Campaigns</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Section 3: Settings & System -->
+      <div class="nav-group">
+        <div class="nav-section-title">Settings & Docs</div>
+        <nav class="nav-links">
+          <button class="nav-item" type="button" data-view="settings" title="Preferences">
+            <svg class="icon"><use href="#i-sliders"/></svg>
+            <span>Preferences</span>
+          </button>
+          <button class="nav-item" type="button" data-open-help title="Architecture & Platform Rules">
             <svg class="icon"><use href="#i-info"/></svg>
-            <span>Architecture & rules</span>
+            <span>Platform Rules</span>
           </button>
-          <button class="nav-item" type="button" id="nav-cmd-trigger">
+          <button class="nav-item" type="button" id="nav-cmd-trigger" title="Command Palette (Ctrl+K)">
             <svg class="icon"><use href="#i-command"/></svg>
-            <span>Command palette</span>
+            <span>Command Palette</span>
           </button>
         </nav>
       </div>
@@ -131,23 +149,23 @@
         <span class="status-dot"></span>
         <span>Local engine connected</span>
       </div>
-      <div class="demo-label">FIELDLIST CORE <span>v2.0 PRO</span></div>
+      <div class="demo-label">SPARKXFLOW PRO <span>v2.4</span></div>
     </div>
   </aside>
 
   <!-- App Shell -->
-  <div class="app-shell">
-    <!-- Topbar (Glassmorphic with functional buttons) -->
+  <div class="app-shell" id="app-shell">
+    <!-- Topbar (Glassmorphic Header) -->
     <header class="topbar">
       <div class="breadcrumb">
-        <span class="breadcrumb-item">Admin</span>
+        <span class="breadcrumb-item">SparkXFlow</span>
         <span class="breadcrumb-slash">/</span>
         <span class="breadcrumb-item">Workspace</span>
         <span class="breadcrumb-slash">/</span>
-        <strong class="breadcrumb-current">Overview</strong>
+        <strong class="breadcrumb-current" id="breadcrumb-current-view">Overview</strong>
       </div>
       <div class="topbar-right">
-        <!-- Interactive Command Palette Search Trigger (21st.dev style) -->
+        <!-- Interactive Command Palette Search Trigger -->
         <button id="cmd-palette-btn" class="topbar-search-trigger" type="button" aria-label="Search or type a command">
           <svg class="icon"><use href="#i-search"/></svg>
           <span class="trigger-label">Quick search or command...</span>
@@ -157,167 +175,23 @@
         <!-- Status Pill -->
         <span class="status-pill"><span class="status-dot-live"></span>production</span>
 
-        <!-- Functional Theme Mode Switcher -->
+        <!-- Functional Theme Switcher -->
         <button id="theme-toggle-btn" class="topbar-icon-button" type="button" aria-label="Toggle theme mode" title="Toggle Theme (Midnight / Dark / Light)">
           <svg class="icon" id="theme-icon"><use href="#i-moon"/></svg>
         </button>
 
-        <!-- Help / Info -->
-        <button class="topbar-icon-button" type="button" aria-label="Help & Documentation" data-open-help title="How it works">
+        <!-- Documentation / Help -->
+        <button class="topbar-icon-button" type="button" aria-label="Help & Documentation" data-open-help title="Platform Documentation">
           <svg class="icon"><use href="#i-bell"/></svg>
         </button>
 
-        <!-- User Avatar -->
-        <div class="user-avatar" title="Fieldlist Operator">FL</div>
+        <!-- User Profile Avatar -->
+        <div class="user-avatar" title="SparkXFlow Operator">SXF</div>
       </div>
     </header>
 
-    <main id="overview">
-      <!-- Overview Page Heading -->
-      <section class="page-heading">
-        <div class="heading-content">
-          <div class="heading-badge-pill">
-            <span class="pulse-spark"><svg class="icon"><use href="#i-spark"/></svg></span>
-            <span>NEXT-GEN PROSPECTING PLATFORM</span>
-          </div>
-          <h1>Overview</h1>
-          <p>A clear view of local businesses, opportunities without a website, and outreach workflows.</p>
-        </div>
-        <div class="source-badge spotlight-card" data-spotlight="true">
-          <svg class="icon"><use href="#i-globe"/></svg>
-          <div>Google Maps Headless Feed<span>Direct DOM Extraction · Real-time</span></div>
-        </div>
-      </section>
-
-      <!-- Aceternity Bento Grid (4 Interactive KPI Cards with Spotlights) -->
-      <section class="bento-grid" aria-label="Prospecting overview metrics">
-        <article class="bento-card spotlight-card" data-spotlight="true">
-          <div class="bento-glow-blob"></div>
-          <div class="kpi-label">Search engine</div>
-          <div class="kpi-value glow-text" id="kpi-allowance">Unlimited</div>
-          <div class="kpi-caption"><span id="quota-note">No search caps or rate limits</span></div>
-        </article>
-
-        <article class="bento-card spotlight-card" data-spotlight="true">
-          <div class="bento-glow-blob"></div>
-          <div class="kpi-label">Profiles checked</div>
-          <div class="kpi-value" id="stat-inspected">0</div>
-          <div class="kpi-caption">Unique businesses verified</div>
-        </article>
-
-        <article class="bento-card spotlight-card highlight" data-spotlight="true">
-          <div class="bento-glow-blob amber"></div>
-          <div class="kpi-label">Missing website</div>
-          <div class="kpi-value amber-glow" id="stat-missing">0</div>
-          <div class="kpi-caption">High-potential web design leads</div>
-        </article>
-
-        <article class="bento-card spotlight-card" data-spotlight="true">
-          <div class="bento-glow-blob"></div>
-          <div class="kpi-label">Opportunity share</div>
-          <div class="kpi-value" id="stat-share">0<span class="stat-percent">%</span></div>
-          <div class="kpi-caption">Cached for <span id="cache-days-note" class="cache-days-copy">7</span> days locally</div>
-        </article>
-      </section>
-
-      <!-- Hidden compatibility container for stats-grid -->
-      <div id="stats-grid" style="display:none;" hidden></div>
-
-      <!-- Search Card (21st.dev / Skiper UI Floating Capsule Style) -->
-      <section id="finder-section" class="search-card spotlight-card" data-spotlight="true" aria-labelledby="search-heading">
-        <div class="card-border-glow"></div>
-        <div class="search-card-heading">
-          <div>
-            <h2 id="search-heading">Business finder</h2>
-            <p class="search-card-sub">Extract verified contact numbers, operating hours, and website presence</p>
-          </div>
-          <div class="card-controls-row">
-            <span class="badge-segmented"><span class="live-dot-cyan"></span>Playwright Engine</span>
-          </div>
-        </div>
-
-        <form id="search-form">
-          <div class="query-fields">
-            <div class="field">
-              <label for="niche">Niche / Trade <span>What service or trade?</span></label>
-              <div class="input-wrap">
-                <svg class="icon"><use href="#i-building"/></svg>
-                <input id="niche" name="niche" placeholder="e.g. Electricians, Plumbers, Roofers, Dentists" required minlength="2" maxlength="100" autocomplete="off" list="niche-suggestions">
-                <datalist id="niche-suggestions">
-                  <option value="Electricians">
-                  <option value="Plumbers">
-                  <option value="Landscapers">
-                  <option value="Roofers">
-                  <option value="HVAC Contractors">
-                  <option value="Dentists">
-                  <option value="Hair salons">
-                  <option value="Pet Care">
-                  <option value="Auto repair">
-                </datalist>
-              </div>
-            </div>
-
-            <div class="field">
-              <label for="city">City / Region <span>Target geography</span></label>
-              <div class="input-wrap">
-                <svg class="icon"><use href="#i-pin"/></svg>
-                <input id="city" name="city" placeholder="e.g. Madison, WI or Austin, TX or Hansi" required minlength="2" maxlength="120" autocomplete="off">
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Suggestion Tag Pills (Skiper-UI style) -->
-          <div class="quick-tags-row">
-            <span class="quick-tags-label">Popular trades:</span>
-            <button type="button" class="tag-pill" data-niche="Electricians" data-city="Austin, TX">⚡ Electricians</button>
-            <button type="button" class="tag-pill" data-niche="Plumbers" data-city="Nanaimo, BC">🔧 Plumbers</button>
-            <button type="button" class="tag-pill" data-niche="Roofers" data-city="Madison, WI">🏠 Roofers</button>
-            <button type="button" class="tag-pill" data-niche="Dentists" data-city="Miami, FL">🦷 Dentists</button>
-            <button type="button" class="tag-pill" data-niche="Pet Care" data-city="Hansi">🐾 Pet Care</button>
-          </div>
-
-          <div class="search-options">
-            <div class="toggle-group">
-              <label class="toggle-label">
-                <input id="only-missing" type="checkbox" checked role="switch">
-                <span class="toggle-track" aria-hidden="true"></span>
-                <span>Filter: No website linked only</span>
-              </label>
-            </div>
-
-            <div class="limit-group">
-              <label class="limit-label" for="limit">
-                <span>Inspect up to</span>
-                <select id="limit" name="limit">
-                  <option value="10">10 businesses</option>
-                  <option value="20">20 businesses</option>
-                  <option value="40" selected>40 businesses</option>
-                  <option value="60">60 businesses</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button class="primary-button shimmer-button search-button" id="search-button" type="submit">
-              <span class="shimmer-sweep"></span>
-              <svg class="icon"><use href="#i-search"/></svg>
-              <span>Find businesses</span>
-              <svg class="icon button-arrow"><use href="#i-arrow"/></svg>
-            </button>
-          </div>
-        </form>
-
-        <div class="search-footnote">
-          <div class="footnote-left">
-            <svg class="icon"><use href="#i-shield"/></svg>
-            <span>Playwright headless automation · Zero API keys · Stored in local SQLite</span>
-          </div>
-          <span class="browser-note">Press <kbd class="inline-kbd">/</kbd> anywhere to focus search</span>
-        </div>
-      </section>
-
-      <!-- Notice Alert -->
+    <main>
+      <!-- Global Notice Alert -->
       <div id="notice" class="notice" role="status" hidden>
         <svg class="icon"><use href="#i-info"/></svg>
         <div id="notice-text"></div>
@@ -326,149 +200,732 @@
         </button>
       </div>
 
-      <!-- Progress Card (with Animated Glowing Gradient Track) -->
-      <section id="progress-card" class="progress-card spotlight-card" data-spotlight="true" aria-labelledby="progress-title" hidden>
-        <div class="progress-top">
-          <span class="progress-orb"><svg class="icon"><use href="#i-globe"/></svg></span>
-          <div class="progress-info">
-            <h2 id="progress-title">Navigating Google Maps…</h2>
-            <p id="progress-message" role="status" aria-live="polite">Initializing browser session…</p>
+      <!-- VIEW 1: OVERVIEW DASHBOARD -->
+      <div class="workspace-view active" id="view-overview">
+        <!-- Overview Heading -->
+        <section class="page-heading">
+          <div class="heading-content">
+            <div class="heading-badge-pill">
+              <span class="pulse-spark"><svg class="icon"><use href="#i-spark"/></svg></span>
+              <span>B2B LEAD INTELLIGENCE OS</span>
+            </div>
+            <h1>Overview</h1>
+            <p>Real-time platform intelligence, local market opportunities, and pipeline performance.</p>
           </div>
-          <button id="cancel-search" class="secondary-button small" type="button">Cancel</button>
-        </div>
-        <div class="progress-track" role="progressbar" aria-label="Search progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <span id="progress-fill"></span>
-        </div>
-        <div class="progress-bottom">
-          <span><span class="status-dot-live"></span> Inspecting public profiles live</span>
-          <span id="progress-count">Preparing query</span>
-        </div>
-      </section>
+          <div class="source-badge spotlight-card" data-spotlight="true">
+            <svg class="icon"><use href="#i-globe"/></svg>
+            <div>Google Maps Headless Feed<span>Direct DOM Extraction · Real-time</span></div>
+          </div>
+        </section>
 
-      <!-- Results Section -->
-      <section id="results-section" class="results-section" aria-labelledby="results-heading">
-        <div class="section-heading">
-          <div>
-            <h2 id="results-heading">
-              Prospecting results
-              <span id="result-count" class="count-badge" hidden>0</span>
-            </h2>
-            <p id="results-subtitle">Targeted businesses extracted directly from Google Maps</p>
+        <!-- Real Database KPI Bento Grid -->
+        <section class="bento-grid" aria-label="Prospecting overview metrics">
+          <article class="bento-card spotlight-card" data-spotlight="true">
+            <div class="bento-glow-blob"></div>
+            <div class="kpi-label">Search engine</div>
+            <div class="kpi-value glow-text" id="kpi-allowance">Unlimited</div>
+            <div class="kpi-caption"><span id="quota-note">Zero search caps or rate limits</span></div>
+          </article>
+
+          <article class="bento-card spotlight-card" data-spotlight="true">
+            <div class="bento-glow-blob"></div>
+            <div class="kpi-label">Profiles checked</div>
+            <div class="kpi-value" id="stat-inspected">0</div>
+            <div class="kpi-caption">Unique businesses verified in cache</div>
+          </article>
+
+          <article class="bento-card spotlight-card highlight" data-spotlight="true">
+            <div class="bento-glow-blob amber"></div>
+            <div class="kpi-label">Missing website</div>
+            <div class="kpi-value amber-glow" id="stat-missing">0</div>
+            <div class="kpi-caption">High-potential web design leads</div>
+          </article>
+
+          <article class="bento-card spotlight-card" data-spotlight="true">
+            <div class="bento-glow-blob"></div>
+            <div class="kpi-label">Opportunity share</div>
+            <div class="kpi-value" id="stat-share">0<span class="stat-percent">%</span></div>
+            <div class="kpi-caption">Cached for <span id="cache-days-note" class="cache-days-copy">7</span> days locally</div>
+          </article>
+        </section>
+
+        <!-- Hidden compatibility container for stats-grid -->
+        <div id="stats-grid" style="display:none;" hidden></div>
+
+        <!-- Quick Action Launcher Cards -->
+        <div class="quick-actions-grid">
+          <div class="quick-action-card" data-view-jump="finder">
+            <div class="quick-action-icon"><svg class="icon"><use href="#i-search"/></svg></div>
+            <strong>Find Businesses</strong>
+            <p>Target trades and geographies to scrape public contact records.</p>
+          </div>
+          <div class="quick-action-card" data-view-jump="audit">
+            <div class="quick-action-icon"><svg class="icon"><use href="#i-activity"/></svg></div>
+            <strong>Website Audit</strong>
+            <p>Diagnose page load speed, SSL, mobile tags, and get tailored pitches.</p>
+          </div>
+          <div class="quick-action-card" data-view-jump="saved-leads">
+            <div class="quick-action-icon"><svg class="icon"><use href="#i-bookmark"/></svg></div>
+            <strong>Manage Saved Leads</strong>
+            <p>Track CRM pipeline stages: Qualified, Contacted, Interested, Converted.</p>
+          </div>
+          <div class="quick-action-card" data-view-jump="campaigns">
+            <div class="quick-action-icon"><svg class="icon"><use href="#i-mail"/></svg></div>
+            <strong>Outreach Campaigns</strong>
+            <p>1-Click cold outreach scripts for WhatsApp, Email, and Phone calls.</p>
+          </div>
+        </div>
+
+        <!-- Recent Searches Section -->
+        <section id="recent" class="recent-section" aria-labelledby="recent-heading">
+          <div class="section-heading">
+            <div>
+              <h2 id="recent-heading">Recent searches</h2>
+              <p>Cached searches available for <span class="cache-days-copy">7</span> days without consuming allowance</p>
+            </div>
+            <svg class="icon recent-icon"><use href="#i-clock"/></svg>
+          </div>
+          <div id="recent-list" class="recent-list"></div>
+        </section>
+      </div>
+
+      <!-- VIEW 2: BUSINESS FINDER -->
+      <div class="workspace-view" id="view-finder">
+        <section id="finder-section" class="search-card spotlight-card" data-spotlight="true" aria-labelledby="search-heading">
+          <div class="card-border-glow"></div>
+          <div class="search-card-heading">
+            <div>
+              <h2 id="search-heading">Business finder</h2>
+              <p class="search-card-sub">Extract verified contact numbers, operating hours, and website presence</p>
+            </div>
+            <div class="card-controls-row">
+              <span class="badge-segmented"><span class="live-dot-cyan"></span>Playwright Engine</span>
+            </div>
+          </div>
+
+          <form id="search-form">
+            <div class="query-fields">
+              <div class="field">
+                <label for="niche">Niche / Trade <span>What service or trade?</span></label>
+                <div class="input-wrap">
+                  <svg class="icon"><use href="#i-building"/></svg>
+                  <input id="niche" name="niche" placeholder="e.g. Electricians, Plumbers, Roofers, Dentists" required minlength="2" maxlength="100" autocomplete="off" list="niche-suggestions">
+                  <datalist id="niche-suggestions">
+                    <option value="Electricians">
+                    <option value="Plumbers">
+                    <option value="Landscapers">
+                    <option value="Roofers">
+                    <option value="HVAC Contractors">
+                    <option value="Dentists">
+                    <option value="Hair salons">
+                    <option value="Pet Care">
+                    <option value="Auto repair">
+                  </datalist>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="city">City / Region <span>Target geography</span></label>
+                <div class="input-wrap">
+                  <svg class="icon"><use href="#i-pin"/></svg>
+                  <input id="city" name="city" placeholder="e.g. Madison, WI or Austin, TX or Hansi" required minlength="2" maxlength="120" autocomplete="off">
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Suggestion Tag Pills -->
+            <div class="quick-tags-row">
+              <span class="quick-tags-label">Popular trades:</span>
+              <button type="button" class="tag-pill" data-niche="Electricians" data-city="Austin, TX">⚡ Electricians</button>
+              <button type="button" class="tag-pill" data-niche="Plumbers" data-city="Nanaimo, BC">🔧 Plumbers</button>
+              <button type="button" class="tag-pill" data-niche="Roofers" data-city="Madison, WI">🏠 Roofers</button>
+              <button type="button" class="tag-pill" data-niche="Dentists" data-city="Miami, FL">🦷 Dentists</button>
+              <button type="button" class="tag-pill" data-niche="Pet Care" data-city="Hansi">🐾 Pet Care</button>
+            </div>
+
+            <div class="search-options">
+              <div class="toggle-group">
+                <label class="toggle-label">
+                  <input id="only-missing" type="checkbox" checked role="switch">
+                  <span class="toggle-track" aria-hidden="true"></span>
+                  <span>Filter: No website linked only</span>
+                </label>
+              </div>
+
+              <div class="limit-group">
+                <label class="limit-label" for="limit">
+                  <span>Inspect up to</span>
+                  <select id="limit" name="limit">
+                    <option value="10">10 businesses</option>
+                    <option value="20">20 businesses</option>
+                    <option value="40" selected>40 businesses</option>
+                    <option value="60">60 businesses</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="primary-button shimmer-button search-button" id="search-button" type="submit">
+                <span class="shimmer-sweep"></span>
+                <svg class="icon"><use href="#i-search"/></svg>
+                <span>Find businesses</span>
+                <svg class="icon button-arrow"><use href="#i-arrow"/></svg>
+              </button>
+            </div>
+          </form>
+
+          <div class="search-footnote">
+            <div class="footnote-left">
+              <svg class="icon"><use href="#i-shield"/></svg>
+              <span>Playwright headless automation · Zero API keys · Stored in local SQLite</span>
+            </div>
+            <span class="browser-note">Press <kbd class="inline-kbd">/</kbd> anywhere to focus search</span>
+          </div>
+        </section>
+
+        <!-- Search Progress Card -->
+        <section id="progress-card" class="progress-card spotlight-card" data-spotlight="true" aria-labelledby="progress-title" hidden>
+          <div class="progress-top">
+            <span class="progress-orb"><svg class="icon"><use href="#i-globe"/></svg></span>
+            <div class="progress-info">
+              <h2 id="progress-title">Navigating Google Maps…</h2>
+              <p id="progress-message" role="status" aria-live="polite">Initializing browser session…</p>
+            </div>
+            <button id="cancel-search" class="secondary-button small" type="button">Cancel</button>
+          </div>
+          <div class="progress-track" role="progressbar" aria-label="Search progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="progress-fill"></span>
+          </div>
+          <div class="progress-bottom">
+            <span><span class="status-dot-live"></span> Inspecting public profiles live</span>
+            <span id="progress-count">Preparing query</span>
+          </div>
+        </section>
+
+        <!-- Results Table Section -->
+        <section id="results-section" class="results-section" aria-labelledby="results-heading">
+          <div class="section-heading">
+            <div>
+              <h2 id="results-heading">
+                Prospecting results
+                <span id="result-count" class="count-badge" hidden>0</span>
+              </h2>
+              <p id="results-subtitle">Targeted businesses extracted directly from Google Maps</p>
+            </div>
+            <div class="results-actions">
+              <div id="filter-control" class="filter-control" hidden>
+                <label class="sr-only" for="result-filter">Show listings</label>
+                <select id="result-filter">
+                  <option value="missing">No website linked</option>
+                  <option value="all">All checked businesses</option>
+                </select>
+              </div>
+              <button id="save-selected-leads" class="secondary-button glow-hover" type="button" disabled title="Save selected prospects to Saved Leads CRM">
+                <svg class="icon"><use href="#i-bookmark"/></svg>
+                <span>Save to Leads</span>
+              </button>
+              <button id="copy-all-phones" class="secondary-button glow-hover" type="button" disabled title="Copy all phone numbers in current view to clipboard">
+                <svg class="icon"><use href="#i-copy"/></svg>
+                <span>Copy All Phones</span>
+              </button>
+              <button id="copy-sheets" class="secondary-button glow-hover" type="button" disabled title="Copy formatted table ready to paste directly into Google Sheets or Excel (Ctrl+V)">
+                <svg class="icon"><use href="#i-grid"/></svg>
+                <span>Copy for Sheets</span>
+              </button>
+              <button id="export-csv" class="secondary-button shimmer-hover" type="button" disabled>
+                <svg class="icon"><use href="#i-download"/></svg>
+                <span id="export-csv-text">Download CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="results-card spotlight-card" data-spotlight="true">
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state">
+              <div class="empty-radar" aria-hidden="true">
+                <div class="radar-circle circle-1"></div>
+                <div class="radar-circle circle-2"></div>
+                <div class="radar-circle circle-3"></div>
+                <div class="radar-sweep"></div>
+                <div class="radar-pin">
+                  <svg class="icon"><use href="#i-building"/></svg>
+                </div>
+              </div>
+              <div class="empty-eyebrow">READY TO PROSPECT</div>
+              <h3>Discover businesses with no website.</h3>
+              <p>Pick a niche and a city above. SparkXFlow will inspect Google Maps<br class="desktop-break"> listings and isolate businesses ready for your web services.</p>
+              
+              <div class="example-searches">
+                <span>Quick tests:</span>
+                <button type="button" data-niche="Electricians" data-city="Madison, WI">
+                  Electricians in Madison, WI <svg class="icon"><use href="#i-arrow"/></svg>
+                </button>
+                <button type="button" data-niche="Plumbers" data-city="Nanaimo, BC">
+                  Plumbers in Nanaimo, BC <svg class="icon"><use href="#i-arrow"/></svg>
+                </button>
+                <button type="button" data-niche="Roofers" data-city="Austin, TX">
+                  Roofers in Austin, TX <svg class="icon"><use href="#i-arrow"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Table Container -->
+            <div id="table-container" class="table-container" hidden>
+              <div class="table-meta">
+                <div class="table-filter-bar">
+                  <div class="table-search-wrap">
+                    <svg class="icon"><use href="#i-search"/></svg>
+                    <input id="table-search" type="search" placeholder="Instant filter: search name, phone, area, category..." autocomplete="off">
+                  </div>
+                  <div class="quick-filter-pills" id="quick-filter-pills">
+                    <button type="button" class="filter-pill active" data-pill="all">All</button>
+                    <button type="button" class="filter-pill" data-pill="missing">No Website</button>
+                    <button type="button" class="filter-pill" data-pill="phone">Has Phone</button>
+                    <button type="button" class="filter-pill" data-pill="unclaimed">Unclaimed</button>
+                    <button type="button" class="filter-pill" data-pill="top-rated">4.5★+ Top Rated</button>
+                    <button type="button" class="filter-pill" data-pill="needs-reviews">&lt; 15 Reviews</button>
+                  </div>
+                </div>
+                <div class="table-meta-right">
+                  <span id="table-summary"></span>
+                  <span id="cache-label" class="cache-label"></span>
+                </div>
+              </div>
+              <table>
+                <caption class="sr-only">Public business contact details from Google Maps</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" class="th-checkbox"><input type="checkbox" id="select-all" title="Select all businesses"></th>
+                    <th scope="col">BUSINESS NAME</th>
+                    <th scope="col">PHONE & REACH</th>
+                    <th scope="col">
+                      <button type="button" id="sort-rating" class="sort-button">
+                        RATING <svg class="icon"><use href="#i-sort"/></svg>
+                      </button>
+                    </th>
+                    <th scope="col" title="Shown only when Google Maps exposes a review count">REVIEWS</th>
+                    <th scope="col">ADDRESS & LOCATION</th>
+                    <th scope="col">WEBSITE STATUS</th>
+                    <th scope="col">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+              </table>
+              <div class="table-footer">
+                <span id="table-footer-count"></span>
+                <span>Click any business to open detailed dossier <svg class="icon"><use href="#i-arrow"/></svg></span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- VIEW 3: SAVED LEADS CRM -->
+      <div class="workspace-view" id="view-saved-leads">
+        <section class="page-heading">
+          <div class="heading-content">
+            <div class="heading-badge-pill">
+              <span class="pulse-spark"><svg class="icon"><use href="#i-bookmark"/></svg></span>
+              <span>CRM & PIPELINE</span>
+            </div>
+            <h1>Saved Leads</h1>
+            <p>Manage your prospective clients, outreach statuses, notes, and segmented target lists.</p>
           </div>
           <div class="results-actions">
-            <div id="filter-control" class="filter-control" hidden>
-              <label class="sr-only" for="result-filter">Show listings</label>
-              <select id="result-filter">
-                <option value="missing">No website linked</option>
-                <option value="all">All checked businesses</option>
-              </select>
-            </div>
-            <button id="copy-all-phones" class="secondary-button glow-hover" type="button" disabled title="Copy all phone numbers in current view to clipboard">
+            <button id="crm-copy-phones" class="secondary-button" type="button" title="Copy phones of all leads currently in view">
               <svg class="icon"><use href="#i-copy"/></svg>
-              <span>Copy All Phones</span>
+              <span>Copy Phones</span>
             </button>
-            <button id="copy-sheets" class="secondary-button glow-hover" type="button" disabled title="Copy formatted table ready to paste directly into Google Sheets or Excel (Ctrl+V)">
-              <svg class="icon"><use href="#i-grid"/></svg>
-              <span>Copy for Sheets</span>
-            </button>
-            <button id="export-csv" class="secondary-button shimmer-hover" type="button" disabled>
+            <button id="crm-export-csv" class="secondary-button" type="button">
               <svg class="icon"><use href="#i-download"/></svg>
-              <span id="export-csv-text">Download CSV</span>
+              <span>Export CSV</span>
             </button>
+          </div>
+        </section>
+
+        <!-- CRM Status Filter Bar -->
+        <div class="crm-filter-bar">
+          <div class="crm-status-tabs" id="crm-status-tabs">
+            <button type="button" class="crm-tab active" data-status="ALL">
+              <span>All Leads</span>
+              <span class="crm-tab-badge" id="crm-count-all">0</span>
+            </button>
+            <button type="button" class="crm-tab" data-status="NEW">
+              <span>New</span>
+              <span class="crm-tab-badge" id="crm-count-new">0</span>
+            </button>
+            <button type="button" class="crm-tab" data-status="QUALIFIED">
+              <span>Qualified</span>
+              <span class="crm-tab-badge" id="crm-count-qualified">0</span>
+            </button>
+            <button type="button" class="crm-tab" data-status="CONTACTED">
+              <span>Contacted</span>
+              <span class="crm-tab-badge" id="crm-count-contacted">0</span>
+            </button>
+            <button type="button" class="crm-tab" data-status="INTERESTED">
+              <span>Interested</span>
+              <span class="crm-tab-badge" id="crm-count-interested">0</span>
+            </button>
+            <button type="button" class="crm-tab" data-status="CONVERTED">
+              <span>Converted</span>
+              <span class="crm-tab-badge" id="crm-count-converted">0</span>
+            </button>
+            <button type="button" class="crm-tab" data-status="REJECTED">
+              <span>Rejected</span>
+              <span class="crm-tab-badge" id="crm-count-rejected">0</span>
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="crm-list-filter" class="status-select" title="Filter by list">
+              <option value="">All Lists</option>
+            </select>
+            <div class="table-search-wrap" style="width: 220px;">
+              <svg class="icon"><use href="#i-search"/></svg>
+              <input id="crm-search-input" type="search" placeholder="Search saved leads..." autocomplete="off">
+            </div>
           </div>
         </div>
 
+        <!-- CRM Table Container -->
         <div class="results-card spotlight-card" data-spotlight="true">
-          <!-- Empty State -->
-          <div id="empty-state" class="empty-state">
-            <div class="empty-radar" aria-hidden="true">
-              <div class="radar-circle circle-1"></div>
-              <div class="radar-circle circle-2"></div>
-              <div class="radar-circle circle-3"></div>
-              <div class="radar-sweep"></div>
-              <div class="radar-pin">
-                <svg class="icon"><use href="#i-building"/></svg>
-              </div>
-            </div>
-            <div class="empty-eyebrow">READY TO PROSPECT</div>
-            <h3>Discover businesses with no website.</h3>
-            <p>Pick a niche and a city above. Fieldlist will inspect Google Maps<br class="desktop-break"> listings and isolate businesses ready for your web services.</p>
-            
-            <div class="example-searches">
-              <span>Quick tests:</span>
-              <button type="button" data-niche="Electricians" data-city="Madison, WI">
-                Electricians in Madison, WI <svg class="icon"><use href="#i-arrow"/></svg>
-              </button>
-              <button type="button" data-niche="Plumbers" data-city="Nanaimo, BC">
-                Plumbers in Nanaimo, BC <svg class="icon"><use href="#i-arrow"/></svg>
-              </button>
-              <button type="button" data-niche="Roofers" data-city="Austin, TX">
-                Roofers in Austin, TX <svg class="icon"><use href="#i-arrow"/></svg>
-              </button>
-            </div>
+          <div id="crm-empty-state" class="empty-state" style="padding: 48px 20px;">
+            <div class="empty-eyebrow">NO LEADS FOUND</div>
+            <h3>Your lead pipeline is currently empty.</h3>
+            <p>Go to the Business Finder, search your niche, and click "Save to Leads" or use the row bookmark button.</p>
+            <button type="button" class="primary-button" data-view-jump="finder" style="margin-top: 14px;">
+              <span>Go to Business Finder</span>
+              <svg class="icon"><use href="#i-arrow"/></svg>
+            </button>
           </div>
 
-          <!-- Table Container -->
-          <div id="table-container" class="table-container" hidden>
-            <div class="table-meta">
-              <div class="table-filter-bar">
-                <div class="table-search-wrap">
-                  <svg class="icon"><use href="#i-search"/></svg>
-                  <input id="table-search" type="search" placeholder="Instant filter: search name, phone, area, category..." autocomplete="off">
-                </div>
-                <div class="quick-filter-pills" id="quick-filter-pills">
-                  <button type="button" class="filter-pill active" data-pill="all">All</button>
-                  <button type="button" class="filter-pill" data-pill="missing">No Website</button>
-                  <button type="button" class="filter-pill" data-pill="phone">Has Phone</button>
-                  <button type="button" class="filter-pill" data-pill="unclaimed">Unclaimed</button>
-                  <button type="button" class="filter-pill" data-pill="top-rated">4.5★+ Top Rated</button>
-                  <button type="button" class="filter-pill" data-pill="needs-reviews">&lt; 15 Reviews</button>
-                </div>
-              </div>
-              <div class="table-meta-right">
-                <span id="table-summary"></span>
-                <span id="cache-label" class="cache-label"></span>
-              </div>
-            </div>
+          <div id="crm-table-container" class="table-container" hidden>
             <table>
-              <caption class="sr-only">Public business contact details from Google Maps</caption>
               <thead>
                 <tr>
-                  <th scope="col" class="th-checkbox"><input type="checkbox" id="select-all" title="Select all businesses"></th>
-                  <th scope="col">BUSINESS NAME</th>
+                  <th scope="col">LEAD NAME</th>
                   <th scope="col">PHONE & REACH</th>
-                  <th scope="col">
-                    <button type="button" id="sort-rating" class="sort-button">
-                      RATING <svg class="icon"><use href="#i-sort"/></svg>
-                    </button>
-                  </th>
-                  <th scope="col" title="Shown only when Google Maps exposes a review count">REVIEWS</th>
-                  <th scope="col">ADDRESS & LOCATION</th>
-                  <th scope="col">WEBSITE STATUS</th>
-                  <th scope="col"><span class="sr-only">Actions</span></th>
+                  <th scope="col">LOCATION</th>
+                  <th scope="col">WEBSITE</th>
+                  <th scope="col">STATUS</th>
+                  <th scope="col">LIST</th>
+                  <th scope="col">NOTES</th>
+                  <th scope="col">ACTIONS</th>
                 </tr>
               </thead>
-              <tbody id="results-body"></tbody>
+              <tbody id="crm-results-body"></tbody>
             </table>
-            <div class="table-footer">
-              <span id="table-footer-count"></span>
-              <span>Click any business to open detailed dossier <svg class="icon"><use href="#i-arrow"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: LEAD LISTS MANAGER -->
+      <div class="workspace-view" id="view-lists">
+        <section class="page-heading">
+          <div class="heading-content">
+            <div class="heading-badge-pill">
+              <span class="pulse-spark"><svg class="icon"><use href="#i-folder"/></svg></span>
+              <span>LIST SEGMENTATION</span>
+            </div>
+            <h1>Lead Lists</h1>
+            <p>Organize your prospects into segmented campaigns and target groups.</p>
+          </div>
+        </section>
+
+        <!-- Create List Card -->
+        <div class="audit-input-card spotlight-card" data-spotlight="true">
+          <h2 style="font-size: 15px; margin: 0 0 4px;">Create New List</h2>
+          <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 14px;">Segment prospects by location, niche, or outreach wave.</p>
+          <form id="create-list-form" class="audit-form-row">
+            <div class="input-wrap" style="flex: 2;">
+              <svg class="icon"><use href="#i-folder"/></svg>
+              <input id="new-list-name" placeholder="List name (e.g. Austin Plumbers Wave 1)" required minlength="2" maxlength="60" autocomplete="off">
+            </div>
+            <div class="input-wrap" style="flex: 3;">
+              <input id="new-list-desc" placeholder="Optional description or strategy..." maxlength="150" autocomplete="off">
+            </div>
+            <button class="primary-button" type="submit">
+              <svg class="icon"><use href="#i-check"/></svg>
+              <span>Create List</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Lists Grid -->
+        <div class="lists-grid" id="lists-container"></div>
+      </div>
+
+      <!-- VIEW 5: WEBSITE AUDIT STUDIO -->
+      <div class="workspace-view" id="view-audit">
+        <section class="page-heading">
+          <div class="heading-content">
+            <div class="heading-badge-pill">
+              <span class="pulse-spark"><svg class="icon"><use href="#i-activity"/></svg></span>
+              <span>DIAGNOSTIC ENGINE</span>
+            </div>
+            <h1>Website Audit Studio</h1>
+            <p>Live HTTP diagnostic probe for client websites. Test response latency, SSL certificate, meta tags, and mobile readiness.</p>
+          </div>
+        </section>
+
+        <!-- Audit URL Form -->
+        <div class="audit-input-card spotlight-card" data-spotlight="true">
+          <h2 style="font-size: 15px; margin: 0 0 4px;">Run Website Diagnostic Probe</h2>
+          <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Enter a prospect's website URL to check page load response, SSL certificate, and SEO metadata.</p>
+          <form id="audit-form" class="audit-form-row">
+            <div class="input-wrap">
+              <svg class="icon"><use href="#i-globe"/></svg>
+              <input id="audit-url-input" type="url" placeholder="https://example.com" required autocomplete="off">
+            </div>
+            <button class="primary-button" id="audit-submit-btn" type="submit">
+              <svg class="icon"><use href="#i-activity"/></svg>
+              <span>Run Diagnostic Probe</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Audit Scorecard Container -->
+        <div id="audit-results-container" hidden>
+          <div class="audit-scorecard-grid">
+            <div class="audit-kpi-card">
+              <span class="audit-kpi-label">HTTP Status</span>
+              <span class="audit-kpi-val" id="audit-kpi-status">—</span>
+              <span class="audit-kpi-note" id="audit-kpi-status-note">Target web server response</span>
+            </div>
+            <div class="audit-kpi-card">
+              <span class="audit-kpi-label">Latency (TTFB)</span>
+              <span class="audit-kpi-val" id="audit-kpi-latency">—</span>
+              <span class="audit-kpi-note" id="audit-kpi-latency-note">Server response time</span>
+            </div>
+            <div class="audit-kpi-card">
+              <span class="audit-kpi-label">SSL Security</span>
+              <span class="audit-kpi-val" id="audit-kpi-ssl">—</span>
+              <span class="audit-kpi-note" id="audit-kpi-ssl-note">HTTPS encryption</span>
+            </div>
+            <div class="audit-kpi-card">
+              <span class="audit-kpi-label">Mobile Ready</span>
+              <span class="audit-kpi-val" id="audit-kpi-mobile">—</span>
+              <span class="audit-kpi-note" id="audit-kpi-mobile-note">Viewport meta tag</span>
+            </div>
+          </div>
+
+          <!-- Findings & Opportunities -->
+          <div class="findings-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h2 style="font-size: 15px; margin: 0;">Diagnostic Checklist & Technical Opportunities</h2>
+              <span class="badge-segmented" id="audit-site-title"></span>
+            </div>
+            <div class="findings-list" id="audit-findings-list"></div>
+          </div>
+
+          <!-- Tailored Client Pitch -->
+          <div class="audit-pitch-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg class="icon" style="color: var(--accent-blue);"><use href="#i-spark"/></svg>
+                <strong style="color: #ffffff; font-size: 14px;">Tailored Sales Pitch (Ready to Send)</strong>
+              </div>
+              <button class="primary-button small" id="copy-audit-pitch-btn" type="button">
+                <svg class="icon"><use href="#i-copy"/></svg>
+                <span>Copy Pitch Script</span>
+              </button>
+            </div>
+            <pre class="audit-pitch-box" id="audit-pitch-content"></pre>
+          </div>
+        </div>
+
+        <!-- Recent Audits List -->
+        <div style="margin-top: 36px;">
+          <h2 style="font-size: 16px; margin: 0 0 14px;">Recent Website Audits</h2>
+          <div id="recent-audits-list" class="recent-list"></div>
+        </div>
+      </div>
+
+      <!-- VIEW 6: CONTACT ENRICHMENT STUDIO -->
+      <div class="workspace-view" id="view-enrichment">
+        <section class="page-heading">
+          <div class="heading-content">
+            <div class="heading-badge-pill">
+              <span class="pulse-spark"><svg class="icon"><use href="#i-zap"/></svg></span>
+              <span>DATA NORMALIZATION</span>
+            </div>
+            <h1>Contact Enrichment Studio</h1>
+            <p>Validate phone numbers, format international dial codes, build WhatsApp links, and generate vCards.</p>
+          </div>
+        </section>
+
+        <div class="enrichment-box spotlight-card" data-spotlight="true">
+          <h2 style="font-size: 15px; margin: 0 0 6px;">Phone Normalizer & Deep-Link Builder</h2>
+          <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 16px;">Type or paste any local phone number to normalize digits and build direct reach links.</p>
+          <div class="audit-form-row">
+            <div class="input-wrap">
+              <svg class="icon"><use href="#i-phone"/></svg>
+              <input id="enrich-phone-input" placeholder="e.g. 09034443303 or (512) 555-0199" autocomplete="off">
+            </div>
+            <button class="primary-button" id="enrich-process-btn" type="button">
+              <svg class="icon"><use href="#i-zap"/></svg>
+              <span>Enrich Contact</span>
+            </button>
+          </div>
+
+          <div class="enrichment-output" id="enrich-output" hidden>
+            <div class="enrich-stat-box">
+              <strong>E.164 International Format</strong>
+              <span id="enrich-e164">—</span>
+            </div>
+            <div class="enrich-stat-box">
+              <strong>WhatsApp Direct Link</strong>
+              <a id="enrich-wa-link" target="_blank" rel="noopener noreferrer" style="color: var(--accent-green); text-decoration: underline; font-size: 12px; font-family: monospace;">Open WhatsApp</a>
+            </div>
+            <div class="enrich-stat-box">
+              <strong>vCard (.vcf) Contact Card</strong>
+              <button class="secondary-button small" id="enrich-vcard-btn" type="button" style="margin-top: 4px;">
+                <svg class="icon"><use href="#i-download"/></svg>
+                <span>Download .vcf</span>
+              </button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- Recent Searches Section -->
-      <section id="recent" class="recent-section" aria-labelledby="recent-heading" hidden>
-        <div class="section-heading">
-          <div>
-            <h2 id="recent-heading">Recent searches</h2>
-            <p>Cached searches available for <span class="cache-days-copy">7</span> days without consuming allowance</p>
+      <!-- VIEW 7: OUTREACH CAMPAIGNS STUDIO -->
+      <div class="workspace-view" id="view-campaigns">
+        <section class="page-heading">
+          <div class="heading-content">
+            <div class="heading-badge-pill">
+              <span class="pulse-spark"><svg class="icon"><use href="#i-mail"/></svg></span>
+              <span>COLD OUTREACH SCRIPTS</span>
+            </div>
+            <h1>Outreach Campaigns</h1>
+            <p>Battle-tested, high-conversion cold outreach templates for B2B web design and marketing agencies.</p>
           </div>
-          <svg class="icon recent-icon"><use href="#i-clock"/></svg>
+        </section>
+
+        <div class="campaign-templates-grid">
+          <!-- Template 1: Missing Website -->
+          <div class="campaign-card spotlight-card" data-spotlight="true">
+            <div>
+              <span class="campaign-tag">High-Yield Hook</span>
+              <h2 style="font-size: 16px; margin: 0 0 6px;">No Website Opportunity</h2>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">For businesses with strong Google ratings but no web link.</p>
+              <div class="campaign-preview" id="camp-tmpl-1">Hi {business_name}, noticed your business has great reviews in {city}, but when potential customers click your Google Maps profile, there is no website linked to book or see your pricing.
+
+I drafted a 1-page mobile preview for {business_name} that lets clients call or request quotes directly. Would you be open to seeing it? No cost or obligation.</div>
+            </div>
+            <button class="secondary-button" type="button" data-copy-camp="camp-tmpl-1">
+              <svg class="icon"><use href="#i-copy"/></svg>
+              <span>Copy Template</span>
+            </button>
+          </div>
+
+          <!-- Template 2: Slow Loading Speed -->
+          <div class="campaign-card spotlight-card" data-spotlight="true">
+            <div>
+              <span class="campaign-tag">Technical Angle</span>
+              <h2 style="font-size: 16px; margin: 0 0 6px;">Slow Loading Speed Fix</h2>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">For websites with high server latency and bounce rate risk.</p>
+              <div class="campaign-preview" id="camp-tmpl-2">Hi {business_name}, I ran a speed diagnostic on your website and noticed the first response takes over 1.8s to load on mobile networks. 
+
+Google's data shows 53% of mobile visitors abandon sites taking over 3 seconds. We optimize WordPress and custom sites to load under 800ms. Can I send you a 60-second video breakdown of the fixes?</div>
+            </div>
+            <button class="secondary-button" type="button" data-copy-camp="camp-tmpl-2">
+              <svg class="icon"><use href="#i-copy"/></svg>
+              <span>Copy Template</span>
+            </button>
+          </div>
+
+          <!-- Template 3: 5-Star Reviews Growth -->
+          <div class="campaign-card spotlight-card" data-spotlight="true">
+            <div>
+              <span class="campaign-tag">Social Proof</span>
+              <h2 style="font-size: 16px; margin: 0 0 6px;">Google Review Booster</h2>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">For businesses with under 15 reviews that need local map pack rank.</p>
+              <div class="campaign-preview" id="camp-tmpl-3">Hi {business_name}, you do excellent work in {city}, but competing {category} businesses nearby have 50+ reviews, pushing them higher on Google Maps searches.
+
+We built an automated SMS review invite tool that turns past clients into 5-star Google reviews. Would you like to see how it works for 2 minutes?</div>
+            </div>
+            <button class="secondary-button" type="button" data-copy-camp="camp-tmpl-3">
+              <svg class="icon"><use href="#i-copy"/></svg>
+              <span>Copy Template</span>
+            </button>
+          </div>
+
+          <!-- Template 4: Unclaimed Profile -->
+          <div class="campaign-card spotlight-card" data-spotlight="true">
+            <div>
+              <span class="campaign-tag">Security & Ownership</span>
+              <h2 style="font-size: 16px; margin: 0 0 6px;">Unclaimed Listing Alert</h2>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">For profiles that say "Own this business?".</p>
+              <div class="campaign-preview" id="camp-tmpl-4">Hi {business_name}, important heads up: your Google Maps business profile in {city} is currently listed as 'Unclaimed'. 
+
+This means anyone can suggest edits to your hours or phone number. We help local businesses verify ownership and lock down their Google Business Profile. Happy to walk you through claiming it free of charge.</div>
+            </div>
+            <button class="secondary-button" type="button" data-copy-camp="camp-tmpl-4">
+              <svg class="icon"><use href="#i-copy"/></svg>
+              <span>Copy Template</span>
+            </button>
+          </div>
         </div>
-        <div id="recent-list" class="recent-list"></div>
-      </section>
+      </div>
+
+      <!-- VIEW 8: PREFERENCES & SETTINGS -->
+      <div class="workspace-view" id="view-settings">
+        <section class="page-heading">
+          <div class="heading-content">
+            <div class="heading-badge-pill">
+              <span class="pulse-spark"><svg class="icon"><use href="#i-sliders"/></svg></span>
+              <span>PLATFORM CONFIGURATION</span>
+            </div>
+            <h1>Preferences & Storage</h1>
+            <p>System runtime settings, SQLite local database status, and export format defaults.</p>
+          </div>
+        </section>
+
+        <div class="lists-grid">
+          <div class="list-card spotlight-card" data-spotlight="true">
+            <div>
+              <div class="list-card-header">
+                <h2 class="list-title">Headless Scraper</h2>
+                <span class="badge-segmented"><span class="live-dot-cyan"></span>Active</span>
+              </div>
+              <p class="list-desc">Playwright Chromium automation running locally on human-speed DOM navigation. Bypasses Places API billing with 0 rate limits.</p>
+            </div>
+            <div class="list-card-footer">
+              <span>Mode: <strong>Unlimited</strong></span>
+              <span>RAM Budget: 160MB</span>
+            </div>
+          </div>
+
+          <div class="list-card spotlight-card" data-spotlight="true">
+            <div>
+              <div class="list-card-header">
+                <h2 class="list-title">SQLite Database</h2>
+                <span class="badge-segmented"><span class="status-dot-live"></span>Connected</span>
+              </div>
+              <p class="list-desc">All discovered businesses, saved leads, custom segmented lists, and website audits are persisted locally in <code>fieldlist.db</code>.</p>
+            </div>
+            <div class="list-card-footer">
+              <span>Cache TTL: <strong>7 Days</strong></span>
+              <span>Format: WAL Mode</span>
+            </div>
+          </div>
+
+          <div class="list-card spotlight-card" data-spotlight="true">
+            <div>
+              <div class="list-card-header">
+                <h2 class="list-title">Export Engine</h2>
+                <span class="badge-segmented">Ready</span>
+              </div>
+              <p class="list-desc">Exports clean RFC-4180 CSV files or TSV format with 1-click clipboard copy ready to paste directly into Google Sheets or Excel.</p>
+            </div>
+            <div class="list-card-footer">
+              <span>Encoding: UTF-8</span>
+              <span>Separator: Comma / Tab</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Page Footer -->
       <footer class="page-footer">
@@ -477,13 +934,13 @@
           <span>Public business records. Verify details prior to client communication.</span>
         </div>
         <button type="button" data-open-help>
-          Platform documentation <svg class="icon"><use href="#i-external"/></svg>
+          Platform documentation & rules <svg class="icon"><use href="#i-external"/></svg>
         </button>
       </footer>
     </main>
   </div>
 
-  <!-- Command Palette Modal (Raycast / 21st.dev style) -->
+  <!-- Command Palette Modal -->
   <dialog id="cmd-palette-dialog" class="cmd-dialog" aria-labelledby="cmd-palette-title">
     <div class="cmd-box">
       <div class="cmd-input-wrap">
@@ -492,26 +949,39 @@
         <kbd class="cmd-esc-badge" data-close-cmd>ESC</kbd>
       </div>
       <div class="cmd-list" id="cmd-list">
+        <div class="cmd-group-label">Navigation</div>
+        <div class="cmd-item" data-cmd-view="overview">
+          <svg class="icon"><use href="#i-grid"/></svg>
+          <span>Go to Overview Dashboard</span>
+        </div>
+        <div class="cmd-item" data-cmd-view="finder">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <span>Go to Business Finder</span>
+        </div>
+        <div class="cmd-item" data-cmd-view="saved-leads">
+          <svg class="icon"><use href="#i-bookmark"/></svg>
+          <span>Go to Saved Leads CRM</span>
+        </div>
+        <div class="cmd-item" data-cmd-view="audit">
+          <svg class="icon"><use href="#i-activity"/></svg>
+          <span>Go to Website Audit Studio</span>
+        </div>
+        <div class="cmd-item" data-cmd-view="campaigns">
+          <svg class="icon"><use href="#i-mail"/></svg>
+          <span>Go to Outreach Campaigns</span>
+        </div>
         <div class="cmd-group-label">Quick Searches</div>
         <div class="cmd-item" data-cmd-niche="Electricians" data-cmd-city="Madison, WI">
           <svg class="icon"><use href="#i-building"/></svg>
           <span>Electricians in Madison, WI</span>
-          <span class="cmd-shortcut">Enter</span>
         </div>
         <div class="cmd-item" data-cmd-niche="Plumbers" data-cmd-city="Austin, TX">
           <svg class="icon"><use href="#i-building"/></svg>
           <span>Plumbers in Austin, TX</span>
-          <span class="cmd-shortcut">Enter</span>
         </div>
         <div class="cmd-item" data-cmd-niche="Roofers" data-cmd-city="Chicago, IL">
           <svg class="icon"><use href="#i-building"/></svg>
           <span>Roofers in Chicago, IL</span>
-          <span class="cmd-shortcut">Enter</span>
-        </div>
-        <div class="cmd-item" data-cmd-niche="Dentists" data-cmd-city="Miami, FL">
-          <svg class="icon"><use href="#i-building"/></svg>
-          <span>Dentists in Miami, FL</span>
-          <span class="cmd-shortcut">Enter</span>
         </div>
         <div class="cmd-group-label">Actions</div>
         <div class="cmd-item" id="cmd-action-export">
@@ -530,7 +1000,7 @@
     </div>
   </dialog>
 
-  <!-- Help / Documentation Modal -->
+  <!-- Help & Rules Dialog -->
   <dialog id="help-dialog" class="modal" aria-labelledby="help-title">
     <div class="modal-top">
       <div class="modal-icon"><svg class="icon"><use href="#i-info"/></svg></div>
@@ -538,37 +1008,37 @@
         <svg class="icon"><use href="#i-close"/></svg>
       </button>
     </div>
-    <div class="eyebrow">AUTOMATED PROSPECTING WORKFLOW</div>
-    <h2 id="help-title">How Fieldlist works</h2>
-    <p>Fieldlist runs a local headless browser session directly on your machine. It browses Google Maps just like a human operator—no expensive Places APIs or subscription credits required.</p>
+    <div class="eyebrow">SPARKXFLOW ARCHITECTURE</div>
+    <h2 id="help-title">How SparkXFlow Works</h2>
+    <p>SparkXFlow runs an automated headless browser session directly against Google Maps. It navigates public web listings just like a human operator, extracting verified business details without expensive Places APIs.</p>
     
     <ol class="help-steps">
       <li>
         <span>01</span>
         <div>
           <strong>Specify target trade & city</strong>
-          <p>Include state or postal code for precise boundary resolution.</p>
+          <p>Include state or region for precise geographical boundary resolution.</p>
         </div>
       </li>
       <li>
         <span>02</span>
         <div>
           <strong>Automated DOM inspection</strong>
-          <p>The headless browser inspects rendered listing cards for business names, phones, reviews, and website buttons.</p>
+          <p>Playwright navigates listing cards, extracting business names, phone numbers, review scores, and website availability.</p>
         </div>
       </li>
       <li>
         <span>03</span>
         <div>
-          <strong>Isolate lead opportunities & export</strong>
-          <p>Filter businesses with zero linked websites, view full profile information, or export everything to clean CSV format.</p>
+          <strong>Filter opportunities & run outreach</strong>
+          <p>Isolate businesses lacking websites, run HTTP diagnostic audits on existing sites, and launch customized WhatsApp and email pitches.</p>
         </div>
       </li>
     </ol>
 
     <div class="help-disclaimer">
-      <strong>Unlimited Prospecting Engine</strong>
-      <p>Configured with no rate limits or search quotas. Queries are cached for 7 days to deliver instant results for repeated searches.</p>
+      <strong>Zero-Quota Engine</strong>
+      <p>Configured with no daily search limits. Results are cached in local SQLite for 7 days for instant repeated retrieval.</p>
     </div>
 
     <button class="primary-button modal-done" type="button" data-close-dialog>
@@ -577,7 +1047,7 @@
     </button>
   </dialog>
 
-  <!-- Detail Dialog & AI Cold Outreach Studio -->
+  <!-- Business Dossier & Outreach Studio Dialog -->
   <dialog id="detail-dialog" class="modal detail-modal" aria-labelledby="detail-title">
     <div class="modal-top">
       <div class="modal-top-left">
@@ -595,7 +1065,7 @@
     <div id="detail-status" class="detail-badges-row"></div>
     <dl id="detail-fields" class="detail-fields"></dl>
 
-    <!-- 1-Click Cold Outreach Studio -->
+    <!-- Personalized Outreach Studio -->
     <div class="outreach-studio">
       <div class="outreach-header">
         <div class="outreach-title">
@@ -667,6 +1137,10 @@
     </div>
 
     <div class="detail-actions">
+      <button class="secondary-button" id="detail-save-lead-btn" type="button">
+        <svg class="icon"><use href="#i-bookmark"/></svg>
+        <span>Save to CRM Leads</span>
+      </button>
       <a id="detail-map" class="secondary-button" target="_blank" rel="noopener noreferrer">
         <svg class="icon"><use href="#i-external"/></svg>
         <span>Open in Google Maps</span>
@@ -677,6 +1151,27 @@
       </a>
       <button class="primary-button modal-done" type="button" data-close-dialog>
         <span>Done</span>
+      </button>
+    </div>
+  </dialog>
+
+  <!-- Lead Note Dialog -->
+  <dialog id="lead-note-dialog" class="modal" aria-labelledby="note-dialog-title">
+    <div class="modal-top">
+      <div class="modal-icon"><svg class="icon"><use href="#i-edit"/></svg></div>
+      <button class="icon-button" type="button" data-close-dialog aria-label="Close">
+        <svg class="icon"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="eyebrow">CRM LEAD NOTE</div>
+    <h2 id="note-dialog-title">Edit Lead Notes</h2>
+    <p id="note-dialog-subtitle" style="font-size: 13px; color: var(--text-muted); margin: 4px 0 14px;">Keep track of calls, client requirements, or outreach status.</p>
+    <textarea id="lead-note-input" class="note-dialog-textarea" rows="5" placeholder="Add notes (e.g. Spoke to owner on WhatsApp, interested in 1-page site for $500, follow up Monday...)"></textarea>
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button class="secondary-button" type="button" data-close-dialog>Cancel</button>
+      <button class="primary-button" id="save-lead-note-btn" type="button">
+        <svg class="icon"><use href="#i-check"/></svg>
+        <span>Save Note</span>
       </button>
     </div>
   </dialog>
