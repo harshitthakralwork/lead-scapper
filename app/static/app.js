@@ -1025,6 +1025,60 @@ $('#copy-all-phones').addEventListener('click', () => {
   toast(`${uniquePhones.length} phone numbers copied to clipboard!`);
 });
 
+// Sidebar Navigation Smooth Scroll & Active Tracking
+function setActiveNav(targetId) {
+  $$('.nav-links .nav-item').forEach(item => {
+    if (item.dataset.target) {
+      item.classList.toggle('active', item.dataset.target === targetId);
+    }
+  });
+}
+
+$('#nav-overview')?.addEventListener('click', e => {
+  e.preventDefault();
+  setActiveNav('overview');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  history.replaceState(null, '', window.location.pathname);
+});
+
+$('#nav-finder')?.addEventListener('click', e => {
+  e.preventDefault();
+  setActiveNav('finder');
+  const finderEl = document.getElementById('finder-section') || document.querySelector('.search-card');
+  if (finderEl) {
+    const yOffset = -70;
+    const y = finderEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+    setTimeout(() => $('#niche')?.focus(), 300);
+  }
+  history.replaceState(null, '', window.location.pathname);
+});
+
+$('#nav-recent')?.addEventListener('click', e => {
+  e.preventDefault();
+  setActiveNav('recent');
+  const recentEl = document.getElementById('recent');
+  if (recentEl) {
+    recentEl.hidden = false;
+    const yOffset = -70;
+    const y = recentEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+  history.replaceState(null, '', window.location.pathname);
+});
+
+window.addEventListener('scroll', () => {
+  const recentEl = document.getElementById('recent');
+  const finderEl = document.getElementById('finder-section');
+  if (recentEl && !recentEl.hidden && recentEl.getBoundingClientRect().top <= 220) {
+    setActiveNav('recent');
+  } else if (finderEl && finderEl.getBoundingClientRect().top <= 220) {
+    setActiveNav('finder');
+  } else {
+    setActiveNav('overview');
+  }
+}, { passive: true });
+
 // Select all checkbox
 $('#select-all')?.addEventListener('change', e => {
   const rows = visibleRows();

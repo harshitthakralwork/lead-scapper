@@ -1648,20 +1648,38 @@ tbody tr:last-child td {
 }
 
 .business-button {
-  background: none;
-  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
   text-align: left;
-  display: block;
-  max-width: 260px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 4px;
+  width: auto;
+  max-width: 320px;
   cursor: pointer;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.business-button:focus,
+.business-button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .business-name {
   font-size: 13.5px;
-  line-height: 1.4;
-  color: var(--text-primary);
+  line-height: 1.35;
+  color: #f8fafc;
   font-weight: 700;
-  display: block;
+  display: inline-block;
+  transition: color 0.15s ease;
 }
 
 .business-button:hover .business-name {
@@ -1671,10 +1689,17 @@ tbody tr:last-child td {
 }
 
 .business-category {
-  display: block;
+  display: inline-flex;
+  align-items: center;
   font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 3px;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1px 7px;
+  line-height: 1.4;
+  margin: 0;
 }
 
 /* Phone Cell with WhatsApp & Copy Micro-Actions */

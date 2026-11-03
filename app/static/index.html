@@ -64,15 +64,15 @@
       <div class="nav-group">
         <div class="nav-section-title">Workspace</div>
         <nav class="nav-links">
-          <a class="nav-item active" href="#finder" aria-current="page">
+          <a class="nav-item active" id="nav-overview" href="#overview" data-target="overview">
             <svg class="icon"><use href="#i-grid"/></svg>
             <span>Overview</span>
           </a>
-          <a class="nav-item" href="#finder">
+          <a class="nav-item" id="nav-finder" href="#finder-section" data-target="finder">
             <svg class="icon"><use href="#i-search"/></svg>
             <span>Business finder</span>
           </a>
-          <a class="nav-item" href="#recent">
+          <a class="nav-item" id="nav-recent" href="#recent" data-target="recent">
             <svg class="icon"><use href="#i-clock"/></svg>
             <span>Recent searches</span>
           </a>
@@ -172,7 +172,7 @@
       </div>
     </header>
 
-    <main id="finder">
+    <main id="overview">
       <!-- Overview Page Heading -->
       <section class="page-heading">
         <div class="heading-content">
@@ -224,7 +224,7 @@
       <div id="stats-grid" style="display:none;" hidden></div>
 
       <!-- Search Card (21st.dev / Skiper UI Floating Capsule Style) -->
-      <section class="search-card spotlight-card" data-spotlight="true" aria-labelledby="search-heading">
+      <section id="finder-section" class="search-card spotlight-card" data-spotlight="true" aria-labelledby="search-heading">
         <div class="card-border-glow"></div>
         <div class="search-card-heading">
           <div>
