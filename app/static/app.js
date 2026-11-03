@@ -10,6 +10,7 @@ const state = {
   jobId: null,
   busy: false,
   filter: 'missing',
+  activePill: 'all',
   sort: 'default',
   timer: null,
   pollErrors: 0,
@@ -389,6 +390,26 @@ function updateProgress(job) {
   }
 }
 
+function playSuccessChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    const t = ctx.currentTime;
+    osc.frequency.setValueAtTime(587.33, t); // D5
+    osc.frequency.setValueAtTime(880, t + 0.1); // A5
+    gain.gain.setValueAtTime(0.07, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  } catch {}
+}
+
 async function pollJob() {
   if (!state.jobId || !state.busy) return;
   try {
@@ -399,6 +420,7 @@ async function pollJob() {
       setBusy(false);
       state.jobId = null;
       renderResult(job.result);
+      playSuccessChime();
       await Promise.all([refreshStatus(), refreshHistory()]);
       return;
     }
@@ -482,6 +504,22 @@ async function startSearch(event) {
 function visibleRows() {
   if (!state.result) return [];
   let rows = state.result.businesses.filter(item => state.filter === 'all' || item.website_status === 'missing');
+  
+  // Quick Filter Pill bar logic
+  if (state.activePill && state.activePill !== 'all') {
+    if (state.activePill === 'missing') {
+      rows = rows.filter(item => item.website_status === 'missing');
+    } else if (state.activePill === 'phone') {
+      rows = rows.filter(item => Boolean(item.phone && item.phone !== 'Not listed'));
+    } else if (state.activePill === 'unclaimed') {
+      rows = rows.filter(item => item.is_claimed === false);
+    } else if (state.activePill === 'top-rated') {
+      rows = rows.filter(item => item.rating && item.rating >= 4.5);
+    } else if (state.activePill === 'needs-reviews') {
+      rows = rows.filter(item => !item.reviews || item.reviews < 15);
+    }
+  }
+
   if (state.searchQuery) {
     const q = state.searchQuery.toLowerCase().trim();
     rows = rows.filter(item =>
@@ -500,6 +538,35 @@ function visibleRows() {
     });
   }
   return rows;
+}
+
+async function copyForGoogleSheets() {
+  const rows = visibleRows();
+  if (!rows.length) return toast('No businesses to copy.');
+  const headers = ['Business Name', 'Category', 'Phone', 'Address', 'Rating', 'Reviews', 'Website', 'Website Status', 'Claim Status', 'Plus Code', 'Google Maps Link'];
+  const tsvLines = [headers.join('\t')];
+  for (const b of rows) {
+    tsvLines.push([
+      b.name || '',
+      b.category || '',
+      b.phone || '',
+      b.address || '',
+      b.rating != null ? String(b.rating) : '',
+      b.reviews != null ? String(b.reviews) : '',
+      b.website || '',
+      b.website_status === 'missing' ? 'No website' : 'Linked',
+      b.is_claimed === false ? 'Unclaimed Profile' : 'Claimed',
+      b.plus_code || '',
+      b.maps_url || ''
+    ].map(val => String(val).replace(/[\t\r\n]/g, ' ')).join('\t'));
+  }
+  const tsv = tsvLines.join('\n');
+  try {
+    await navigator.clipboard.writeText(tsv);
+    toast(`Copied ${rows.length} leads! Paste directly into Google Sheets (Ctrl+V)`);
+  } catch {
+    copyText(tsv);
+  }
 }
 
 function externalLink(url, className, text, iconName = 'external') {
@@ -538,6 +605,7 @@ function renderTable() {
   $('#result-count').hidden = false;
   $('#export-csv').disabled = rows.length === 0;
   $('#copy-all-phones').disabled = rows.length === 0;
+  if ($('#copy-sheets')) $('#copy-sheets').disabled = rows.length === 0;
 
   $('#table-summary').textContent = `${rows.length} ${state.filter === 'missing' ? 'leads' : 'businesses'} · ${state.result.inspected} profiles checked`;
   $('#table-footer-count').textContent = `${rows.length} listing${rows.length === 1 ? '' : 's'} in view`;
@@ -779,7 +847,20 @@ async function copyText(value) {
 function openDetail(item) {
   $('#detail-title').textContent = item.name;
   $('#detail-category').textContent = item.category || 'LOCAL BUSINESS';
-  $('#detail-status').replaceChildren(websiteBadge(item));
+  
+  // Badges row
+  const badgesRow = $('#detail-status');
+  badgesRow.replaceChildren(websiteBadge(item));
+  if (item.is_claimed === false) {
+    const unclaimBadge = node('span', 'badge-unclaimed');
+    unclaimBadge.append(icon('shield'), document.createTextNode('Unclaimed Profile'));
+    badgesRow.append(unclaimBadge);
+  } else {
+    const claimBadge = node('span', 'badge-claimed');
+    claimBadge.append(icon('check'), document.createTextNode('Verified Listing'));
+    badgesRow.append(claimBadge);
+  }
+
   const fields = $('#detail-fields');
   fields.replaceChildren();
 
@@ -817,24 +898,66 @@ function openDetail(item) {
     const hostname = new URL(item.website).hostname;
     add('Website', externalLink(item.website, '', hostname));
   } else {
-    add('Website', 'No website link on this Maps profile (Opportunity)');
+    add('Website', 'No website link on this Maps profile (High Opportunity)');
   }
 
   $('#detail-observed').textContent = `Read from Google Maps · ${dateLabel(item.observed_at)}. Verify details before outreach.`;
   $('#detail-map').href = safeLink(item.maps_url);
 
-  // WhatsApp Button in Modal
+  // Generate Personalized AI Outreach Pitches
+  const city = state.result?.city || 'your area';
+  const category = item.category || 'business';
+  const name = item.name || 'there';
+  const ratingStr = item.rating ? `${item.rating}★` : '';
+
+  // 1. WhatsApp Pitch
+  let waMsg = '';
+  if (item.website_status === 'missing') {
+    waMsg = `Hi ${name}! I was looking for top ${category} providers in ${city} on Google Maps and came across your profile. You have great ${ratingStr} reputation, but I noticed you don't have an official website linked to your listing.\n\nCustomers searching on Google frequently click competitors who have a direct site with pricing & one-tap calling. I design high-converting, fast websites for ${category} businesses in ${city}. Would you like to see a quick free mockup demo for ${name}?`;
+  } else if (item.is_claimed === false) {
+    waMsg = `Hi ${name} team! Quick heads up: I noticed your Google Maps listing in ${city} is currently listed as unclaimed. If an unauthorized competitor claims it, you risk losing control of your reviews and customer calls. Would you like a free quick checklist on how to verify and lock your listing today?`;
+  } else {
+    waMsg = `Hi ${name}! Saw your ${category} business in ${city} on Google Maps (${ratingStr} rating). We help local businesses in ${city} automate customer booking and get 2x more phone calls from local search. Are you currently taking on new clients?`;
+  }
+  $('#outreach-wa-text').value = waMsg;
+
+  // WhatsApp Send Link
   if (item.phone) {
     const digits = item.phone.replace(/[^+\d]/g, '');
     const waNum = digits.startsWith('+') ? digits.slice(1) : (digits.length === 10 ? '91' + digits : digits);
-    $('#detail-whatsapp').href = `https://wa.me/${waNum}?text=${encodeURIComponent(`Hi ${item.name}, I came across your business on Google Maps.`)}`;
-    $('#detail-whatsapp').hidden = false;
+    $('#detail-whatsapp-direct').href = `https://wa.me/${waNum}?text=${encodeURIComponent(waMsg)}`;
+    $('#detail-whatsapp-direct').hidden = false;
   } else {
-    $('#detail-whatsapp').hidden = true;
+    $('#detail-whatsapp-direct').hidden = true;
+  }
+
+  // 2. Cold Email Pitch
+  const emailSubj = `Quick question about ${name}'s Google Maps listing in ${city}`;
+  const emailBody = `Hi ${name} team,\n\nI was researching ${category} services in ${city} on Google Maps and came across your profile.\n\n${item.website_status === 'missing' ? "I noticed you don't have an official website linked to your profile, meaning many prospective customers in " + city + " end up calling competing businesses with a website." : "I was looking at your online profile and noticed a few simple improvements that could increase your inbound calls from Google."}\n\nWe specialize in building modern, high-converting digital presence for local businesses in ${city}.\n\nWould you be open to a quick 5-minute chat this week?\n\nBest regards,\nProspecting Team`;
+  $('#outreach-email-subject').value = emailSubj;
+  $('#outreach-email-text').value = emailBody;
+  $('#outreach-email-mailto').href = `mailto:?subject=${encodeURIComponent(emailSubj)}&body=${encodeURIComponent(emailBody)}`;
+
+  // 3. Call Script
+  const callScript = `"Hi, this is [Your Name]. I was researching ${category} companies in ${city} on Google Maps. I noticed you have ${ratingStr || 'great'} customer reviews, but no website linked for online booking.\n\nWho handles your website and marketing so I can share a free preview mockup we created for ${name}?"`;
+  $('#outreach-call-text').value = callScript;
+  if (item.phone) {
+    $('#outreach-call-link').href = `tel:${item.phone.replace(/[^+\d]/g, '')}`;
+    $('#outreach-call-link').hidden = false;
+  } else {
+    $('#outreach-call-link').hidden = true;
   }
 
   $('#detail-website').hidden = !item.website;
   if (item.website) $('#detail-website').href = safeLink(item.website);
+
+  // Reset to WhatsApp tab on open
+  $$('.outreach-tab').forEach(t => t.classList.remove('active'));
+  $('[data-tab="wa"]')?.classList.add('active');
+  $('#pane-wa').hidden = false;
+  $('#pane-email').hidden = true;
+  $('#pane-call').hidden = true;
+
   $('#detail-dialog').showModal();
 }
 
@@ -846,10 +969,47 @@ function openDetail(item) {
 $('#search-form').addEventListener('submit', startSearch);
 $('#dismiss-notice').addEventListener('click', clearNotice);
 $('#export-csv').addEventListener('click', exportCsv);
+$('#copy-sheets')?.addEventListener('click', copyForGoogleSheets);
 $('#result-filter').addEventListener('change', event => { state.filter = event.target.value; renderTable(); });
 $('#sort-rating').addEventListener('click', () => {
   state.sort = state.sort === 'default' ? 'desc' : state.sort === 'desc' ? 'asc' : 'default';
   renderTable();
+});
+
+// Quick Filter Pills
+$$('.filter-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    $$('.filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    state.activePill = pill.dataset.pill;
+    renderTable();
+  });
+});
+
+// Outreach Studio Tabs
+$$('.outreach-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    $$('.outreach-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    $('#pane-wa').hidden = target !== 'wa';
+    $('#pane-email').hidden = target !== 'email';
+    $('#pane-call').hidden = target !== 'call';
+  });
+});
+
+// Outreach Pitch Copy Buttons
+$('#copy-wa-pitch')?.addEventListener('click', () => {
+  copyText($('#outreach-wa-text').value);
+  toast('WhatsApp pitch copied to clipboard!');
+});
+$('#copy-email-pitch')?.addEventListener('click', () => {
+  copyText(`Subject: ${$('#outreach-email-subject').value}\n\n${$('#outreach-email-text').value}`);
+  toast('Cold email pitch copied to clipboard!');
+});
+$('#copy-call-pitch')?.addEventListener('click', () => {
+  copyText($('#outreach-call-text').value);
+  toast('Phone script copied to clipboard!');
 });
 
 // Copy all phones button

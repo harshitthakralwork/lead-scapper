@@ -367,6 +367,10 @@
               <svg class="icon"><use href="#i-copy"/></svg>
               <span>Copy All Phones</span>
             </button>
+            <button id="copy-sheets" class="secondary-button glow-hover" type="button" disabled title="Copy formatted table ready to paste directly into Google Sheets or Excel (Ctrl+V)">
+              <svg class="icon"><use href="#i-grid"/></svg>
+              <span>Copy for Sheets</span>
+            </button>
             <button id="export-csv" class="secondary-button shimmer-hover" type="button" disabled>
               <svg class="icon"><use href="#i-download"/></svg>
               <span id="export-csv-text">Download CSV</span>
@@ -411,6 +415,14 @@
                 <div class="table-search-wrap">
                   <svg class="icon"><use href="#i-search"/></svg>
                   <input id="table-search" type="search" placeholder="Instant filter: search name, phone, area, category..." autocomplete="off">
+                </div>
+                <div class="quick-filter-pills" id="quick-filter-pills">
+                  <button type="button" class="filter-pill active" data-pill="all">All</button>
+                  <button type="button" class="filter-pill" data-pill="missing">No Website</button>
+                  <button type="button" class="filter-pill" data-pill="phone">Has Phone</button>
+                  <button type="button" class="filter-pill" data-pill="unclaimed">Unclaimed</button>
+                  <button type="button" class="filter-pill" data-pill="top-rated">4.5★+ Top Rated</button>
+                  <button type="button" class="filter-pill" data-pill="needs-reviews">&lt; 15 Reviews</button>
                 </div>
               </div>
               <div class="table-meta-right">
@@ -565,35 +577,107 @@
     </button>
   </dialog>
 
-  <!-- Detail Dialog -->
+  <!-- Detail Dialog & AI Cold Outreach Studio -->
   <dialog id="detail-dialog" class="modal detail-modal" aria-labelledby="detail-title">
     <div class="modal-top">
-      <div class="modal-icon"><svg class="icon"><use href="#i-building"/></svg></div>
+      <div class="modal-top-left">
+        <div class="modal-icon"><svg class="icon"><use href="#i-building"/></svg></div>
+        <div class="modal-title-group">
+          <div id="detail-category" class="eyebrow"></div>
+          <h2 id="detail-title"></h2>
+        </div>
+      </div>
       <button class="icon-button" type="button" data-close-dialog aria-label="Close">
         <svg class="icon"><use href="#i-close"/></svg>
       </button>
     </div>
-    <div id="detail-category" class="eyebrow"></div>
-    <h2 id="detail-title"></h2>
-    <div id="detail-status"></div>
+    
+    <div id="detail-status" class="detail-badges-row"></div>
     <dl id="detail-fields" class="detail-fields"></dl>
+
+    <!-- 1-Click Cold Outreach Studio -->
+    <div class="outreach-studio">
+      <div class="outreach-header">
+        <div class="outreach-title">
+          <svg class="icon"><use href="#i-spark"/></svg>
+          <span>Personalized Outreach Studio</span>
+        </div>
+        <div class="outreach-tabs">
+          <button type="button" class="outreach-tab active" data-tab="wa">WhatsApp Hook</button>
+          <button type="button" class="outreach-tab" data-tab="email">Cold Email</button>
+          <button type="button" class="outreach-tab" data-tab="call">Call Script</button>
+        </div>
+      </div>
+
+      <div class="outreach-body">
+        <!-- WhatsApp Tab -->
+        <div class="outreach-pane active" id="pane-wa">
+          <textarea id="outreach-wa-text" readonly rows="4" class="outreach-textarea"></textarea>
+          <div class="outreach-actions-bar">
+            <a id="detail-whatsapp-direct" class="primary-button whatsapp-button" target="_blank" rel="noopener noreferrer">
+              <svg class="icon"><use href="#i-whatsapp"/></svg>
+              <span>Send via WhatsApp</span>
+            </a>
+            <button id="copy-wa-pitch" class="secondary-button" type="button">
+              <svg class="icon"><use href="#i-copy"/></svg>
+              <span>Copy Message</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cold Email Tab -->
+        <div class="outreach-pane" id="pane-email" hidden>
+          <div class="email-subject-line">
+            <span class="subject-tag">Subject:</span>
+            <input type="text" id="outreach-email-subject" readonly class="subject-input">
+          </div>
+          <textarea id="outreach-email-text" readonly rows="5" class="outreach-textarea"></textarea>
+          <div class="outreach-actions-bar">
+            <a id="outreach-email-mailto" class="primary-button" target="_blank">
+              <svg class="icon"><use href="#i-external"/></svg>
+              <span>Open in Email App</span>
+            </a>
+            <button id="copy-email-pitch" class="secondary-button" type="button">
+              <svg class="icon"><use href="#i-copy"/></svg>
+              <span>Copy Email Pitch</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Call Script Tab -->
+        <div class="outreach-pane" id="pane-call" hidden>
+          <textarea id="outreach-call-text" readonly rows="4" class="outreach-textarea"></textarea>
+          <div class="outreach-actions-bar">
+            <a id="outreach-call-link" class="primary-button">
+              <svg class="icon"><use href="#i-phone"/></svg>
+              <span>Call Business</span>
+            </a>
+            <button id="copy-call-pitch" class="secondary-button" type="button">
+              <svg class="icon"><use href="#i-copy"/></svg>
+              <span>Copy Call Script</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="detail-source">
       <svg class="icon"><use href="#i-info"/></svg>
       <span id="detail-observed"></span>
     </div>
+
     <div class="detail-actions">
-      <a id="detail-map" class="primary-button" target="_blank" rel="noopener noreferrer">
-        <span>Open in Google Maps</span>
+      <a id="detail-map" class="secondary-button" target="_blank" rel="noopener noreferrer">
         <svg class="icon"><use href="#i-external"/></svg>
-      </a>
-      <a id="detail-whatsapp" class="secondary-button whatsapp-button" target="_blank" rel="noopener noreferrer" hidden>
-        <svg class="icon"><use href="#i-whatsapp"/></svg>
-        <span>WhatsApp Chat</span>
+        <span>Open in Google Maps</span>
       </a>
       <a id="detail-website" class="secondary-button" target="_blank" rel="noopener noreferrer" hidden>
-        <span>Visit website</span>
-        <svg class="icon"><use href="#i-external"/></svg>
+        <svg class="icon"><use href="#i-globe"/></svg>
+        <span>Visit Website</span>
       </a>
+      <button class="primary-button modal-done" type="button" data-close-dialog>
+        <span>Done</span>
+      </button>
     </div>
   </dialog>
 

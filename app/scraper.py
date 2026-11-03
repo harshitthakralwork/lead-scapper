@@ -69,6 +69,7 @@ DETAIL_JS = r"""
   const reviewLabel = ratingLabels.find(value => /\breviews?\b/i.test(value)) || label('button[jsaction*="review"]')
     || Array.from(q('.F7nice')?.querySelectorAll('span') || []).map(el => el.textContent.trim()).find(value => /^\(\d[\d,]*\)$/.test(value));
   const ratingNode = q('.F7nice span[aria-hidden="true"]');
+  const claimNode = q('a[href*="business.google.com/create"], button[data-item-id*="merchant"], [aria-label*="Claim this business"], [aria-label*="claim this business"]');
   return {
     name: text('h1'),
     website: website?.href || '',
@@ -80,6 +81,7 @@ DETAIL_JS = r"""
     category: text('button[jsaction*="category"]'),
     rating_text: ratingNode?.textContent || '',
     reviews_text: reviewLabel,
+    is_claimed: !Boolean(claimNode),
     profile_ready: Boolean(website || addressNode || phoneNode || share)
   };
 }
@@ -163,6 +165,7 @@ def extract_business(listing: dict[str, str], detail: dict[str, Any], source_url
         "appointment_url": public_http_url(detail.get("appointment_url", "")),
         "rating": parse_rating(detail.get("rating_text", "")),
         "reviews": parse_reviews(detail.get("reviews_text", "")),
+        "is_claimed": bool(detail.get("is_claimed", True)),
         "website": website,
         "website_status": status,
         "maps_url": clean_maps_url(source_url),
