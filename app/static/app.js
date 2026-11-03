@@ -719,5 +719,26 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-refreshStatus();
-refreshHistory();
+async function initApp() {
+  await Promise.all([refreshStatus(), refreshHistory()]);
+  if (!state.result && !state.busy) {
+    try {
+      const { searches } = await api('/api/history');
+      if (searches && searches.length > 0) {
+        const item = searches[0];
+        $('#niche').value = item.niche;
+        $('#city').value = item.city;
+        $('#limit').value = item.limit;
+        const res = await api('/api/search', {
+          method: 'POST',
+          body: JSON.stringify({ niche: item.niche, city: item.city, limit: item.limit, only_missing: true })
+        });
+        if (res.kind === 'cached' && res.result) {
+          renderResult(res.result);
+        }
+      }
+    } catch { /* Fallback */ }
+  }
+}
+
+initApp();
