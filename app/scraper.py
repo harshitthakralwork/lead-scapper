@@ -6,6 +6,8 @@ never treated as a missing website. A successful extraction is not guaranteed.
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
+import gc
 import math
 import os
 import re
@@ -14,7 +16,25 @@ from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable
 from urllib.parse import quote, urlparse
 
-from playwright.async_api import Browser, Page, TimeoutError as PlaywrightTimeout, async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, TimeoutError as PlaywrightTimeout, async_playwright
+
+CHROMIUM_ARGS = [
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--disable-software-rasterizer",
+    "--disable-extensions",
+    "--disable-background-networking",
+    "--disable-default-apps",
+    "--disable-sync",
+    "--disable-translate",
+    "--headless=new",
+    "--mute-audio",
+    "--no-first-run",
+    "--no-zygote",
+    "--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process",
+    "--js-flags=--max-old-space-size=160",
+]
 
 ProgressCallback = Callable[[dict[str, Any]], Awaitable[None]]
 MAX_RUNTIME = int(os.environ.get("SCRAPE_TIMEOUT_SECONDS", "240"))
@@ -189,17 +209,30 @@ async def _guard(page: Page) -> None:
         )
 
 
-async def _new_page(browser: Browser) -> Page:
+async def _create_context(browser: Browser) -> BrowserContext:
     context = await browser.new_context(
-        locale="en-US", viewport={"width": 1440, "height": 1000},
+        locale="en-US", viewport={"width": 1280, "height": 800},
         reduced_motion="reduce", service_workers="block",
     )
-    page = await context.new_page()
-    page.set_default_timeout(12000)
-    # Keep layout and scripts, but avoid downloading photographs, fonts and video.
-    await page.route("**/*", lambda route: route.abort()
-                     if route.request.resource_type in {"image", "media", "font"} else route.continue_())
-    return page
+    context.set_default_timeout(15000)
+
+    async def _route_filter(route):
+        req = route.request
+        url = req.url
+        if (
+            req.resource_type in {"image", "media", "font"}
+            or "/maps/vt" in url
+            or "/maps/preview/vp" in url
+            or "google-analytics" in url
+            or "googletagmanager" in url
+            or "play.google.com/log" in url
+        ):
+            await route.abort()
+        else:
+            await route.continue_()
+
+    await context.route("**/*", _route_filter)
+    return context
 
 
 async def _collect_listings(page: Page, query: str, limit: int, cancelled: asyncio.Event | None,
@@ -268,6 +301,7 @@ async def scrape_maps(niche: str, city: str, limit: int = 40, *,
                       cancelled: asyncio.Event | None = None) -> dict[str, Any]:
     """Inspect at most `limit` unique listings, then let the caller filter the results."""
     browser = None
+    context = None
     started = time.monotonic()
     deadline = started + MAX_RUNTIME
     businesses: list[dict[str, Any]] = []
@@ -279,7 +313,7 @@ async def scrape_maps(niche: str, city: str, limit: int = 40, *,
         async with async_playwright() as playwright:
             try:
                 browser = await playwright.chromium.launch(
-                    headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"],
+                    headless=True, args=CHROMIUM_ARGS,
                     timeout=30000,
                 )
             except Exception as exc:
@@ -287,14 +321,22 @@ async def scrape_maps(niche: str, city: str, limit: int = 40, *,
                     "The browser could not start. Install it with: python -m playwright install chromium. "
                     "On Linux, missing system libraries may require playwright install-deps chromium."
                 ) from exc
-            page = await _new_page(browser)
-            listings, exhausted = await _collect_listings(page, f"{niche} in {city}", limit, cancelled, progress, deadline)
+            context = await _create_context(browser)
+            feed_page = await context.new_page()
+            listings, exhausted = await _collect_listings(feed_page, f"{niche} in {city}", limit, cancelled, progress, deadline)
+            
+            # Immediately close feed_page to release its heavy DOM tree from memory
+            with suppress(Exception):
+                await feed_page.close()
+            gc.collect()
+
             if not listings:
                 return {"niche": niche, "city": city, "businesses": [], "inspected": 0,
                         "attempted": 0, "unverified": 0, "complete": True,
                         "notice": "No matching listings were found.",
                         "elapsed_seconds": round(time.monotonic() - started, 1)}
-            detail_page = await _new_page(browser)
+
+            detail_page = await context.new_page()
             for index, listing in enumerate(listings):
                 _check_cancel(cancelled)
                 if time.monotonic() >= deadline:
@@ -337,7 +379,15 @@ async def scrape_maps(niche: str, city: str, limit: int = 40, *,
                 await _progress(progress, stage="inspecting", inspected=inspected,
                                 total=len(listings), verified=len(businesses),
                                 message=f"Checking business profiles · {inspected} of {len(listings)}")
-                await detail_page.wait_for_timeout(1100)
+
+                # Cycle page every 3 listings to prevent memory leaks in Google Maps SPA
+                if (index + 1) % 3 == 0 and (index + 1) < len(listings):
+                    with suppress(Exception):
+                        await detail_page.close()
+                    detail_page = await context.new_page()
+                    gc.collect()
+                else:
+                    await detail_page.wait_for_timeout(900)
             else:
                 complete = len(listings) >= limit or exhausted
             if unverified:
@@ -361,8 +411,13 @@ async def scrape_maps(niche: str, city: str, limit: int = 40, *,
     except Exception as exc:
         raise ScrapeError("Browser extraction failed. Google may be unavailable or may have changed its page layout.") from exc
     finally:
-        if browser:
-            await browser.close()
+        with suppress(Exception):
+            if context:
+                await context.close()
+        with suppress(Exception):
+            if browser:
+                await browser.close()
+        gc.collect()
 
 
 if __name__ == "__main__":

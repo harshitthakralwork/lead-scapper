@@ -58,28 +58,55 @@ function dateLabel(value) {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    signal: AbortSignal.timeout(20000)
-  });
-  let data;
+  let response;
   try {
-    data = await response.json();
-  } catch {
-    throw new Error('Local server returned an unreadable response.');
+    response = await fetch(path, {
+      ...options,
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      signal: AbortSignal.timeout(30000)
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') {
+      const timeoutErr = new Error('Server took too long to reply. Retrying…');
+      timeoutErr.status = 504;
+      throw timeoutErr;
+    }
+    const netErr = new Error('Network connection issue. Retrying…');
+    netErr.status = 0;
+    throw netErr;
   }
+
+  let data = null;
+  const isJson = (response.headers.get('content-type') || '').includes('application/json');
+  if (isJson) {
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+  }
+
   if (!response.ok) {
-    const message = typeof data.detail === 'string'
+    if ([502, 503, 504].includes(response.status)) {
+      const busyErr = new Error('Server is warming up or busy. Retrying in a moment…');
+      busyErr.status = response.status;
+      throw busyErr;
+    }
+    const message = (data && typeof data.detail === 'string')
       ? data.detail
-      : Array.isArray(data.detail)
+      : (data && Array.isArray(data.detail))
         ? data.detail.map(item => item.msg).join(' ')
-        : 'The request could not be completed.';
+        : `Request error (${response.status}).`;
     const error = new Error(message);
     error.status = response.status;
     throw error;
   }
+
+  if (!data && !isJson) {
+    throw new Error('Server returned an unexpected response format.');
+  }
+
   return data;
 }
 
@@ -392,7 +419,7 @@ async function pollJob() {
     }
   } catch (error) {
     state.pollErrors += 1;
-    if (error.status === 404 || state.pollErrors >= 4) {
+    if (error.status === 404 || state.pollErrors >= 8) {
       setBusy(false);
       state.jobId = null;
       notice(error.message || 'Connection lost. Check recent searches.', 'error');
