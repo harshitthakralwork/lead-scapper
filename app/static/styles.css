@@ -90,6 +90,80 @@
   box-sizing: border-box;
 }
 
+/* ==========================================================================
+   SVG Icon System & Sprite Library Reset
+   ========================================================================== */
+
+.icon-library {
+  display: none !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+svg.icon,
+.icon {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 16px;
+  max-height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+svg.icon use,
+.icon use {
+  pointer-events: none;
+}
+
+/* WhatsApp icon uses fill, not stroke */
+use[href*="whatsapp"],
+svg:has(use[href*="whatsapp"]) {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+/* Specific icon size modifiers */
+.icon.button-arrow {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 14px;
+  max-height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.primary-button:hover .button-arrow {
+  transform: translateX(3px);
+}
+
+.icon.cmd-search-icon {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px;
+  min-height: 18px;
+}
+
+.modal-icon .icon {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px;
+  min-height: 20px;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 32px;
