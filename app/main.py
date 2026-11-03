@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import sys
 import time
 import uuid
 from contextlib import asynccontextmanager, suppress
@@ -11,6 +12,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlparse
+
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
